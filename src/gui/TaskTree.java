@@ -206,7 +206,7 @@ class TaskTreeCellRenderer extends DefaultTreeCellRenderer {
 
     if(value instanceof MutableTaskNode) {
       final MutableTaskNode node = (MutableTaskNode) value;
-      final Task task = node.getUserObject();
+      final Task task = node.getTask();
       if(task != null) {
         text = task.getName();
         if (!selected)

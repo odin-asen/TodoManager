@@ -323,7 +323,7 @@ public class TodoFrame extends JFrame {
         if(e.isAddedPath()) {
           if(object instanceof MutableTaskNode) {
             final MutableTaskNode node = (MutableTaskNode) object;
-            statusBar.showTaskInformation(node.getUserObject());
+            statusBar.showTaskInformation(node.getTask());
           } else {
             statusBar.setText("");
             statusBar.showTaskInformation(null);

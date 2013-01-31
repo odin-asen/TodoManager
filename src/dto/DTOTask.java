@@ -1,9 +1,5 @@
 package dto;
 
-import business.Task;
-
-import java.util.List;
-
 import static dto.TaskProperty.Attribution;
 import static dto.TaskProperty.Priority;
 
@@ -13,12 +9,26 @@ import static dto.TaskProperty.Priority;
  * Time: 00:45
  */
 public class DTOTask {
-  public DTOTask parent;
-  public List<Task> children;
+  public String id;
+  public String parentID;
   public String name;
   public Boolean permanent;
   public Long dueDate;
   public Priority priority;
   public Attribution attribution;
   public String description;
+
+  @Override
+  public String toString() {
+    return "DTOTask{" +
+        "id='" + id + '\'' +
+        ", parentID='" + parentID + '\'' +
+        ", name='" + name + '\'' +
+        ", permanent=" + permanent +
+        ", dueDate=" + dueDate +
+        ", priority=" + priority +
+        ", attribution=" + attribution +
+        ", description='" + description + '\'' +
+        '}';
+  }
 }

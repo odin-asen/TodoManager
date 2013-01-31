@@ -2,6 +2,7 @@ package data;
 
 import com.thoughtworks.xstream.XStream;
 import dto.DTOTask;
+import dto.DTOTaskConverter;
 
 import java.io.*;
 import java.util.List;
@@ -18,10 +19,7 @@ public class TodoFileIO {
     final XStream xStream = new XStream();
     xStream.alias("todo-list", List.class);
     xStream.alias("task", DTOTask.class);
-    xStream.useAttributeFor(DTOTask.class, "category");
-    xStream.useAttributeFor(DTOTask.class, "name");
-    xStream.useAttributeFor(DTOTask.class, "dueDate");
-    xStream.useAttributeFor(DTOTask.class, "permanent");
+    xStream.registerConverter(new DTOTaskConverter());
     return xStream;
   }
 

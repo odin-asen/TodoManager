@@ -56,7 +56,7 @@ public class TaskNodeTable extends JComponent {
       final Enumeration<MutableTaskNode> children = node.children();
       model.clear();
       while(children.hasMoreElements())
-        model.add(children.nextElement().getUserObject());
+        model.add(children.nextElement().getTask());
     }
   }
 

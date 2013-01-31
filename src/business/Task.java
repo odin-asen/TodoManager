@@ -38,11 +38,6 @@ public class Task {
     setDescription(description);
   }
 
-  public Task(Task task) {
-    this(task.getName(), task.isPermanent(), task.getDueDate(), task.getAttribution(),
-        task.getPriority(), task.getDescription());
-  }
-
   /* Methods */
 
   public boolean equals(Object o) {
@@ -65,41 +60,6 @@ public class Task {
     result = 31 * result + description.hashCode();
     return result;
   }
-
-//  public static DTOTask toDTO(Task task) {
-//    if(task == null)
-//      return null;
-//
-//    final DTOTask dto = new DTOTask();
-//    dto.children = task.children;
-//    dto.description = task.getDescription();
-//    dto.dueDate = task.getDueDate();
-//    dto.attribution = task.getAttribution();
-//    dto.name = task.getName();
-//    dto.permanent = task.isPermanent();
-//    dto.priority = task.getPriority();
-//    return dto;
-//  }
-//
-//  public static Task fromDTO(DTOTask dto) {
-//    if(dto == null)
-//      return null;
-//
-//    final Task task = new Task();
-//    if(dto.children != null) {
-//      for (Task child : dto.children)
-//        task.addChild(child);
-//    }
-//    task.setParent(fromDTO(dto.parent));
-//    task.setDescription(dto.description);
-//    task.setDueDate(dto.dueDate);
-//    task.setAttribution(dto.attribution);
-//    task.setName(dto.name);
-//    task.setPermanent(dto.permanent);
-//    task.setPriority(dto.priority);
-//
-//    return task;
-//  }
 
   /* Getter and Setter */
 
