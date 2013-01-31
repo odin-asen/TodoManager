@@ -1,12 +1,16 @@
-package business;
+package dto;
+
+import data.LoggingUtility;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * User: Timm Herrmann
@@ -14,6 +18,9 @@ import java.util.List;
  * Time: 20:49
  */
 public class ReflectionUtility {
+  private static final Logger LOGGER =
+      LoggingUtility.getLogger(ReflectionUtility.class.getName());
+
   /** Returns the getter methods of a class. The sorted sequence is the sequence of the
    * corresponding fields declared in the class. */
   public static <T>List<Method> getSortedGetters(Class<T> aClass){
@@ -137,5 +144,19 @@ public class ReflectionUtility {
       }
     };
     return findMethodForField(setter, field, comparator) != null;
+  }
+
+  public static String getValue(Object object, String getterMethodName) {
+    try {
+      final Object o = object.getClass().getMethod(getterMethodName).invoke(object);
+      return o != null ? o.toString() : null;
+    } catch (NoSuchMethodException e) {
+      LOGGER.warning("Method " + getterMethodName + " could not be found!");
+    } catch (InvocationTargetException e) {
+      LOGGER.warning("Method invocation failed: " + e.getMessage());
+    } catch (IllegalAccessException e) {
+      LOGGER.warning("No access to method: "+e.getMessage());
+    }
+    return null;
   }
 }

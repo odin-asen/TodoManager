@@ -1,6 +1,11 @@
 package dto;
 
-import static dto.TaskProperty.*;
+import business.Task;
+
+import java.util.List;
+
+import static dto.TaskProperty.Attribution;
+import static dto.TaskProperty.Priority;
 
 /**
  * User: Timm Herrmann
@@ -8,7 +13,8 @@ import static dto.TaskProperty.*;
  * Time: 00:45
  */
 public class DTOTask {
-  public String category;
+  public DTOTask parent;
+  public List<Task> children;
   public String name;
   public Boolean permanent;
   public Long dueDate;

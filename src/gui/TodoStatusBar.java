@@ -93,7 +93,7 @@ public class TodoStatusBar extends JPanel implements Runnable {
       calendar.setTimeInMillis(task.getDueDate());
       setTaskInformation(task.getAttribution(),
           format.format(calendar.getTime()), task.getName(),
-          I18nSupport.getValue(BUNDLE_GUI, "label.tooltip.category.0", task.getCategory()));
+          I18nSupport.getValue(BUNDLE_GUI, "label.tooltip.category.0", task.getName()));
       setText(I18nSupport.getValue(BUNDLE_GUI, "status.selected.task"));
     }
   }

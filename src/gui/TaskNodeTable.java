@@ -1,8 +1,9 @@
 package gui;
 
-import business.ReflectionUtility;
+import business.MutableTaskNode;
 import business.Task;
 import data.LoggingUtility;
+import dto.ReflectionUtility;
 import i18n.I18nSupport;
 
 import javax.swing.*;
@@ -14,6 +15,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -22,28 +24,21 @@ import java.util.logging.Logger;
  * Date: 27.01.13
  * Time: 17:13
  */
-public class TaskTable extends JComponent {
+public class TaskNodeTable extends JComponent {
   private static final Dimension DIMENSION_MAX =
       new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
   private JTable table;
-  private JScrollPane tableScrollPane;
   private TaskTableModel model;
+  private MutableTaskNode currentNode;
 
   /* Constructors */
 
-  public TaskTable() {
-    model = new TaskTableModel();
-    table = new JTable(model);
-    model.addTableModelListener(table);
-    tableScrollPane = new JScrollPane(table,
+  public TaskNodeTable() {
+    JScrollPane tableScrollPane = new JScrollPane(getTable(),
         JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
     tableScrollPane.setMaximumSize(DIMENSION_MAX);
-    table.setMaximumSize(DIMENSION_MAX);
-
-    setLayout(new BorderLayout());
-    add(tableScrollPane, BorderLayout.CENTER);
-    for (int i = 0; i < 10; i++)
-      model.add(new Task());
+    setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+    add(tableScrollPane);
   }
 
   /* Methods */
@@ -55,8 +50,34 @@ public class TaskTable extends JComponent {
         "TaskTable's layout must be instance of BoxLayout and have PAGE_AXIS");
   }
 
+  public void showNode(MutableTaskNode node) {
+    if(node != null) {
+      currentNode = node;
+      final Enumeration<MutableTaskNode> children = node.children();
+      model.clear();
+      while(children.hasMoreElements())
+        model.add(children.nextElement().getUserObject());
+    }
+  }
+
+  public void updateTable() {
+    showNode(currentNode);
+  }
+
   /* Getter and Setter */
 
+  private JTable getTable() {
+    if(table != null)
+      return table;
+
+    table = new JTable();
+    model = new TaskTableModel();
+
+    table.setModel(model);
+    table.setMaximumSize(DIMENSION_MAX);
+
+    return table;
+  }
 }
 
 class TaskTableModel implements TableModel {
@@ -162,5 +183,14 @@ class TaskTableModel implements TableModel {
     tasks.add(task);
     notifyListeners(new TableModelEvent(this, index, index,
         TableModelEvent.ALL_COLUMNS, TableModelEvent.INSERT));
+  }
+
+  public void clear() {
+    if(!tasks.isEmpty()) {
+      final int lastIndex = tasks.size()-1;
+      tasks.clear();
+      notifyListeners(new TableModelEvent(this, 0, lastIndex, TableModelEvent.ALL_COLUMNS,
+          TableModelEvent.DELETE));
+    }
   }
 }

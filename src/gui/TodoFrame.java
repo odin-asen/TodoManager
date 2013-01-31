@@ -1,11 +1,9 @@
 package gui;
 
+import business.MutableTaskNode;
 import business.Task;
-import business.TaskCategory;
 import com.toedter.calendar.JCalendar;
 import com.toedter.calendar.JDateChooser;
-import data.TodoFileIO;
-import dto.DTOTask;
 import dto.TaskProperty;
 import i18n.I18nSupport;
 import resources.ResourceGetter;
@@ -13,8 +11,11 @@ import resources.ResourceList;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
@@ -22,8 +23,10 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * User: Timm Herrmann
@@ -31,7 +34,6 @@ import java.util.List;
  * Time: 11:17
  */
 public class TodoFrame extends JFrame {
-  private static TodoFrame todoFrame;
   private JCalendar calendar;
 
   private enum ItemType {RADIO_BUTTON, CHECK_BOX, NORMAL}
@@ -54,8 +56,8 @@ public class TodoFrame extends JFrame {
   private static final int STATUS_BAR_HEIGHT = 20;
 
   private JMenuBar menuBar;
-  private TaskTreePanel taskTreePanel;
-  private TaskTable taskTable;
+  private TaskTree taskTree;
+  private TaskNodeTable taskNodeTable;
   private TodoStatusBar statusBar;
   private JToolBar toolBar;
 
@@ -67,20 +69,12 @@ public class TodoFrame extends JFrame {
 
   /* Constructors */
 
-  public static TodoFrame getTodoFrame() {
-    if(todoFrame == null) {
-      todoFrame = new TodoFrame();
-    }
-
-    return todoFrame;
-  }
-
-  private TodoFrame() {
+  public TodoFrame() {
     final FramePosition position = FramePosition.createFramePosition(0.8f);
     currentFile = null;
-    taskMenuAL = new TaskActionListener();
-    settingsMenuAL = new SettingsMenuItemListener();
-    fileMenuAL = new FileMenuItemListener();
+    taskMenuAL = new TaskActionListener(this);
+    settingsMenuAL = new SettingsMenuItemListener(this);
+    fileMenuAL = new FileMenuItemListener(this);
 
     setBounds(position.getBounds());
     setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -284,7 +278,7 @@ public class TodoFrame extends JFrame {
   }
 
   private void resetSelectorCalendarI18n() {
-    taskTreePanel.resetI18n();
+    taskTree.resetI18n();
     /* reset calendar */
     calendar.setLocale(Locale.getDefault());
   }
@@ -298,12 +292,12 @@ public class TodoFrame extends JFrame {
     calendar.getDayChooser().setMaxDayCharacters(2);
 
     /* Provide the change of due date for all selected tasks when the mouse is pressed */
-    MouseListener ml = new MouseAdapter() {
-      public void mouseClicked(MouseEvent e) {
-        if (taskTreePanel.selectedNodeExists()) {
-          changeDueDateDialog(calendar.getDate());
-        }
-      }
+    MouseListener ml = new MouseAdapter() { //TODO MouseListener für JDateChooser
+//      public void mouseClicked(MouseEvent e) {
+//        if (taskTreePanel.selectedNodeExists()) {
+//          changeDueDateDialog(calendar.getDate());
+//        }
+//      }
     };
      /* Each button of the day panel gets a mouse listener that changes the due dates
       * after a button was pressed. */
@@ -312,31 +306,59 @@ public class TodoFrame extends JFrame {
         c.addMouseListener(ml);
     }
 
-    panel.add(getTaskTreePanel());
+    panel.add(getTaskTree());
     panel.add(calendar);
     return panel;
   }
 
-  private TaskTreePanel getTaskTreePanel() {
-    if(taskTreePanel != null)
-      return taskTreePanel;
+  private TaskTree getTaskTree() {
+    if(taskTree != null)
+      return taskTree;
 
-    taskTreePanel = new TaskTreePanel();
-
-    return taskTreePanel;
+    taskTree = new TaskTree();
+    taskTree.addTreeSelectionListener(new TreeSelectionListener() {
+      public void valueChanged(TreeSelectionEvent e) {
+        final TreePath path = e.getPath();
+        final Object object = path.getLastPathComponent();
+        if(e.isAddedPath()) {
+          if(object instanceof MutableTaskNode) {
+            final MutableTaskNode node = (MutableTaskNode) object;
+            statusBar.showTaskInformation(node.getUserObject());
+          } else {
+            statusBar.setText("");
+            statusBar.showTaskInformation(null);
+          }
+        }
+      }
+    });
+    taskTree.addTreeMouseListener(new MouseAdapter() {
+      public void mouseClicked(MouseEvent e) {
+        final JTree tree = (JTree) e.getSource();
+        if (e.getClickCount() == 1) {
+          final TreePath path = tree.getClosestPathForLocation(e.getX(), e.getY());
+          if (path != null) {
+            final Object object = path.getLastPathComponent();
+//            tree.setSelectionPath(path);
+            if (object instanceof MutableTaskNode)
+              taskNodeTable.showNode((MutableTaskNode) object);
+          }
+        }
+      }
+    });
+    return taskTree;
   }
 
   private JComponent getTableContainer() {
-    if(taskTable != null)
-      return taskTable;
-    taskTable = new TaskTable();
-    taskTable.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+    if(taskNodeTable != null)
+      return taskNodeTable;
+    taskNodeTable = new TaskNodeTable();
+    taskNodeTable.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-    return taskTable;
+    return taskNodeTable;
   }
 
   private void updateGUI() {
-    if(taskTreePanel.hasListChanged())
+    if(taskTree.hasListChanged())
       setTitle(getTitleString()+"*");
     else setTitle(getTitleString());
   }
@@ -344,11 +366,11 @@ public class TodoFrame extends JFrame {
   public void openTask(Task task, boolean addNew) {
     final TaskEditorPanel openPanel = findOpenEditor(task);
     if(openPanel == null) {
-      int columns = taskTable.getComponentCount()+1;
+      int columns = taskNodeTable.getComponentCount()+1;
       if(columns > 3)
         columns = 3;
-      taskTable.setLayout(new GridLayout(0,columns));
-      taskTable.add(new TaskEditorPanel(task, addNew));
+      taskNodeTable.setLayout(new GridLayout(0,columns));
+      taskNodeTable.add(new TaskEditorPanel(task, addNew));
     } else {
       openPanel.notifyYourself();
       statusBar.setText(I18nSupport.getValue(BUNDLE_MESSAGES, "task.already.open"));
@@ -356,7 +378,7 @@ public class TodoFrame extends JFrame {
   }
 
   private TaskEditorPanel findOpenEditor(Task task) {
-    for (Component component : taskTable.getComponents()) {
+    for (Component component : taskNodeTable.getComponents()) {
       final TaskEditorPanel editor = (TaskEditorPanel) component;
       if(editor.getUnchangedTask().equals(task))
         return editor;
@@ -366,28 +388,28 @@ public class TodoFrame extends JFrame {
 
   public void closeTask(TaskEditorPanel panel, Task unchangedTask) {
     final Task updatedTask = panel.getUpdatedTask();
-    if(!updatedTask.getName().isEmpty()) {
-      if(!panel.isCreatedNew()) {
-        if(!updatedTask.equals(unchangedTask))
-          taskTreePanel.changeTask(unchangedTask, updatedTask);
-      } else taskTreePanel.addTask(updatedTask, true);
-      removeEditor(panel);
-    } else {
-      JOptionPane.showMessageDialog(this,
-          I18nSupport.getValue(BUNDLE_MESSAGES, "enter.a.task.name"),
-          I18nSupport.getValue(BUNDLE_GUI, "dialog.title.missing.value"),
-          JOptionPane.PLAIN_MESSAGE);
-    }
+//    if(!updatedTask.getName().isEmpty()) {
+//      if(!panel.isCreatedNew()) {
+//        if(!updatedTask.equals(unchangedTask))
+//          taskTreePanel.changeTask(unchangedTask, updatedTask);
+//      } else taskTreePanel.addTask(updatedTask, true);
+//      removeEditor(panel);
+//    } else {
+//      JOptionPane.showMessageDialog(this,
+//          I18nSupport.getValue(BUNDLE_MESSAGES, "enter.a.task.name"),
+//          I18nSupport.getValue(BUNDLE_GUI, "dialog.title.missing.value"),
+//          JOptionPane.PLAIN_MESSAGE);
+//    }//TODO brauch ich das noch?
     updateGUI();
   }
 
   private void removeEditor(TaskEditorPanel panel) {
-    for (int index = 0; index < taskTable.getComponentCount(); index++) {
-      final TaskEditorPanel editor = (TaskEditorPanel) taskTable.getComponent(index);
+    for (int index = 0; index < taskNodeTable.getComponentCount(); index++) {
+      final TaskEditorPanel editor = (TaskEditorPanel) taskNodeTable.getComponent(index);
       if(editor.equals(panel)) {
-        taskTable.remove(editor);
-        taskTable.updateUI();
-        index = taskTable.getComponentCount();
+        taskNodeTable.remove(editor);
+        taskNodeTable.updateUI();
+        index = taskNodeTable.getComponentCount();
       }
     }
   }
@@ -400,22 +422,22 @@ public class TodoFrame extends JFrame {
     final DateFormat format = new SimpleDateFormat(I18nSupport.getValue(
         BUNDLE_GUI, "format.due.date"), Locale.getDefault());
     String dateString = format.format(newDate);
-    result = GUIUtilities.showConfirmDialog(todoFrame, strings,
+    result = GUIUtilities.showConfirmDialog(this, strings,
         I18nSupport.getValue(BUNDLE_MESSAGES, "question.change.selected.due.dates.to.0",
             dateString), "", JOptionPane.QUESTION_MESSAGE);
     if (result == JOptionPane.OK_OPTION) {
-      final List<Task> tasks = taskTreePanel.getSelectedTasks();
-      changeTasksDueDate(newDate, tasks);
+//      final List<Task> tasks = taskTreePanel.getSelectedTasks();
+//      changeTasksDueDate(newDate, tasks);//TODO um alle Due dates zu ändern
     } else if(result == JOptionPane.NO_OPTION)
-      taskTreePanel.deselectAllTasks();
+      taskTree.deselectAllTasks();
   }
 
   private void changeTasksDueDate(Date newDate, List<Task> tasks) {
     for (Task task : tasks) {
-      final Task newTask = new Task(task.getCategory(), task.getName(),
-          task.getDescription(), task.isPermanent(), newDate.getTime(),
-          task.getAttribution(), task.getPriority());
-      taskTreePanel.changeTask(task, newTask);
+//      final Task newTask = new Task(task.getParent(), task.getName(),
+//          task.getDescription(), task.isPermanent(), newDate.getTime(),
+//          task.getAttribution(), task.getPriority());
+//      taskTreePanel.changeTask(task, newTask);
     }
   }
 
@@ -431,7 +453,7 @@ public class TodoFrame extends JFrame {
     currentFile = newFile != null ? newFile : new File("");
 
     if(toLoad != null)
-      taskTreePanel.setTasks(toLoad);
+      taskTree.setTasks(toLoad);
   }
 
   public TodoStatusBar getStatusBar() {
@@ -463,16 +485,21 @@ public class TodoFrame extends JFrame {
   }
 
   private List<Task> getTaskList() {
-    return taskTreePanel.getTaskList();
+    return null;//taskTreePanel.getTaskList();//TODO vielleicht die Listener anders gestalten
   }
 
   private boolean hasChanged() {
-    return taskTreePanel.hasListChanged();
+    return taskTree.hasListChanged();
   }
 
   /* Inner Classes */
 
   private class FileMenuItemListener extends WindowAdapter implements ActionListener {
+    private TodoFrame frame;
+    private FileMenuItemListener(TodoFrame frame) {
+      this.frame = frame;
+    }
+
     public void windowClosing(WindowEvent e) {
       closeApplication();
     }
@@ -487,7 +514,7 @@ public class TodoFrame extends JFrame {
       } else if(AC_CLOSE.equals(e.getActionCommand())) {
         closeApplication();
       }
-      TodoFrame.getTodoFrame().updateGUI();
+      updateGUI();
     }
 
     private void closeApplication() {
@@ -496,8 +523,8 @@ public class TodoFrame extends JFrame {
           I18nSupport.getValue(BUNDLE_GUI, "dialog.button.close.without.saving"),
           I18nSupport.getValue(BUNDLE_GUI, "dialog.button.not.sure")};
 
-      if(todoFrame.hasChanged()) {
-        result = GUIUtilities.showConfirmDialog(todoFrame, strings,
+      if(hasChanged()) {
+        result = GUIUtilities.showConfirmDialog(frame, strings,
           I18nSupport.getValue(BUNDLE_MESSAGES, "question.save.before.close"), "",
           JOptionPane.QUESTION_MESSAGE);
       }
@@ -521,12 +548,12 @@ public class TodoFrame extends JFrame {
 
     private void saveFileAs() {
 
-      final File selectedFile = GUIUtilities.getSaveFile(currentFile, todoFrame);
+      final File selectedFile = GUIUtilities.getSaveFile(currentFile, frame);
       try {
         if(selectedFile != null)
           writeListToFile(selectedFile);
       } catch (IOException e) {
-        JOptionPane.showMessageDialog(todoFrame, I18nSupport.getValue(BUNDLE_MESSAGES,
+        JOptionPane.showMessageDialog(frame, I18nSupport.getValue(BUNDLE_MESSAGES,
             "could.not.save.list"), "", JOptionPane.ERROR_MESSAGE);
       }
     }
@@ -538,49 +565,54 @@ public class TodoFrame extends JFrame {
         } else
           saveFileAs();
       } catch (IOException e) {
-          JOptionPane.showMessageDialog(TodoFrame.getTodoFrame(), I18nSupport.getValue(BUNDLE_MESSAGES,
+          JOptionPane.showMessageDialog(frame, I18nSupport.getValue(BUNDLE_MESSAGES,
               "could.not.save.list"), "", JOptionPane.ERROR_MESSAGE);
       }
     }
 
     private void writeListToFile(File file) throws IOException {
 
-      final List<Task> tasks = todoFrame.getTaskList();
-      final List<DTOTask> dtoTasks = new ArrayList<DTOTask>(tasks.size());
-      for (Task task : tasks)
-        dtoTasks.add(Task.toDTO(task));
-      TodoFileIO.writeTodoFile(dtoTasks, file);
-      todoFrame.setCurrentFile(file, null);
-      todoFrame.getTaskTreePanel().setListChanged(false);
-      statusBar.setText(I18nSupport.getValue(BUNDLE_GUI, "status.saved.file.0",
-          file.getAbsolutePath()));
+//      final List<Task> tasks = todoFrame.getTaskList();
+//      final List<DTOTask> dtoTasks = new ArrayList<DTOTask>(tasks.size());
+//      for (Task task : tasks)
+//        dtoTasks.add(Task.toDTO(task));
+//      TodoFileIO.writeTodoFile(dtoTasks, file);
+//      todoFrame.setCurrentFile(file, null);
+//      todoFrame.getTaskTreePanel().setListChanged(false);
+//      statusBar.setText(I18nSupport.getValue(BUNDLE_GUI, "status.saved.file.0",
+//          file.getAbsolutePath()));
     }
 
     private void openFile() {
-      final File selectedFile = GUIUtilities.getOpenFile(currentFile, todoFrame);
-      if(selectedFile != null) {
-        try {
-          final List<DTOTask> dtoTasks = TodoFileIO.readTodoFile(selectedFile);
-          final List<Task> tasks = new ArrayList<Task>(dtoTasks.size());
-          for (DTOTask dtoTask : dtoTasks)
-            tasks.add(Task.fromDTO(dtoTask));
-          todoFrame.setCurrentFile(selectedFile, tasks);
-          todoFrame.getTaskTreePanel().setListChanged(false);
-          statusBar.setText(I18nSupport.getValue(BUNDLE_GUI, "status.opened.file.0",
-              selectedFile.getAbsolutePath()));
-        } catch (IOException e) {
-          JOptionPane.showMessageDialog(todoFrame, I18nSupport.getValue(BUNDLE_MESSAGES,
-              "could.not.load.list"), "", JOptionPane.ERROR_MESSAGE);
-        } catch (Exception e) {
-          e.printStackTrace();
-          JOptionPane.showMessageDialog(todoFrame, I18nSupport.getValue(BUNDLE_MESSAGES,
-              "wrong.file.format"), "", JOptionPane.ERROR_MESSAGE);
-        }
-      }
+      final File selectedFile = GUIUtilities.getOpenFile(currentFile, frame);
+//      if(selectedFile != null) {
+//        try {
+//          final List<DTOTask> dtoTasks = TodoFileIO.readTodoFile(selectedFile);
+//          final List<Task> tasks = new ArrayList<Task>(dtoTasks.size());
+//          for (DTOTask dtoTask : dtoTasks)
+//            tasks.add(Task.fromDTO(dtoTask));
+//          todoFrame.setCurrentFile(selectedFile, tasks);
+//          todoFrame.getTaskTreePanel().setListChanged(false);
+//          statusBar.setText(I18nSupport.getValue(BUNDLE_GUI, "status.opened.file.0",
+//              selectedFile.getAbsolutePath()));
+//        } catch (IOException e) {
+//          JOptionPane.showMessageDialog(todoFrame, I18nSupport.getValue(BUNDLE_MESSAGES,
+//              "could.not.load.list"), "", JOptionPane.ERROR_MESSAGE);
+//        } catch (Exception e) {
+//          e.printStackTrace();
+//          JOptionPane.showMessageDialog(todoFrame, I18nSupport.getValue(BUNDLE_MESSAGES,
+//              "wrong.file.format"), "", JOptionPane.ERROR_MESSAGE);
+//        }
+//      }
     }
   }
 
   private class SettingsMenuItemListener implements ActionListener {
+    private TodoFrame frame;
+    private SettingsMenuItemListener(TodoFrame frame) {
+      this.frame = frame;
+    }
+
     public void actionPerformed(ActionEvent e) {
       if(AC_LANGUAGE_ENG.equals(e.getActionCommand())) {
         Locale.setDefault(Locale.UK);
@@ -595,6 +627,11 @@ public class TodoFrame extends JFrame {
   }
 
   private class TaskActionListener implements ActionListener {
+    private TodoFrame frame;
+    private TaskActionListener(TodoFrame frame) {
+      this.frame = frame;
+    }
+
     public void actionPerformed(ActionEvent e) {
 
       if(AC_ADD_TASK.equals(e.getActionCommand())) {
@@ -604,48 +641,51 @@ public class TodoFrame extends JFrame {
       } else if(AC_REMOVE_TASK.equals(e.getActionCommand())) {
         removeTasks();
       }
-      todoFrame.updateGUI();
+      frame.updateGUI();
     }
 
     private void editTask() {
-      final List<Task> tasks = taskTreePanel.getSelectedTasks();
-      if(!tasks.isEmpty()) {
-        final Task task = tasks.get(tasks.size()-1);
-        if(task != null) {
-          todoFrame.openTask(task, false);
-          statusBar.showTaskInformation(task);
-        } else statusBar.setText(I18nSupport.getValue(BUNDLE_MESSAGES, "no.task.selected"));
-      }
+//      final List<Task> tasks = taskTreePanel.getSelectedTasks();
+//      if(!tasks.isEmpty()) {
+//        final Task task = tasks.get(tasks.size()-1);
+//        if(task != null) {
+//          todoFrame.openTask(task, false);
+//          statusBar.showTaskInformation(task);
+//        } else statusBar.setText(I18nSupport.getValue(BUNDLE_MESSAGES, "no.task.selected"));
+//      }
     }
 
     private void addTask() {
-      Task task = new Task();
-      task.setDueDate(System.currentTimeMillis());
-      todoFrame.openTask(task, true);
-      statusBar.setText(I18nSupport.getValue(BUNDLE_GUI, "status.text.added.task"));
-      statusBar.showTaskInformation(task);
+      final Task task = new Task();
+      task.setName("test");
+      taskTree.addTask(task, true);
+      taskNodeTable.updateTable();
+//      task.setDueDate(System.currentTimeMillis());
+//      todoFrame.openTask(task, true);
+//      statusBar.setText(I18nSupport.getValue(BUNDLE_GUI, "status.text.added.task"));
+//      statusBar.showTaskInformation(task);
     }
 
     private void removeTasks() {
-      if(!taskTreePanel.selectedNodeExists())
-        return;
-
-      String text = "";
-      String[] strings = {I18nSupport.getValue(BUNDLE_GUI, "dialog.button.remove"),
-          I18nSupport.getValue(BUNDLE_GUI, "dialog.button.reset.selections"),
-          I18nSupport.getValue(BUNDLE_GUI, "dialog.button.not.sure")};
-      int result = GUIUtilities.showConfirmDialog(todoFrame, strings,
-          I18nSupport.getValue(BUNDLE_MESSAGES, "remove.selected.tasks.question"),
-          I18nSupport.getValue(BUNDLE_GUI, "dialog.title.remove.tasks"),
-          JOptionPane.QUESTION_MESSAGE);
-      if(result == JOptionPane.YES_OPTION) {
-        int deleted = taskTreePanel.removeSelectedNodes();
-        if(deleted != 0)
-          text = I18nSupport.getValue(BUNDLE_GUI,
-              "status.text.removed.tasks.0",deleted);
-      } else if(result == JOptionPane.NO_OPTION)
-        taskTreePanel.deselectAllTasks();
-      statusBar.setText(text);
+//      if(!taskTreePanel.selectedNodeExists())
+//        return;
+//
+//      String text = "";
+//      String[] strings = {I18nSupport.getValue(BUNDLE_GUI, "dialog.button.remove"),
+//          I18nSupport.getValue(BUNDLE_GUI, "dialog.button.reset.selections"),
+//          I18nSupport.getValue(BUNDLE_GUI, "dialog.button.not.sure")};
+//      int result = GUIUtilities.showConfirmDialog(todoFrame, strings,
+//          I18nSupport.getValue(BUNDLE_MESSAGES, "remove.selected.tasks.question"),
+//          I18nSupport.getValue(BUNDLE_GUI, "dialog.title.remove.tasks"),
+//          JOptionPane.QUESTION_MESSAGE);
+//      if(result == JOptionPane.YES_OPTION) {
+//        int deleted = taskTreePanel.removeSelectedNodes();
+//        if(deleted != 0)
+//          text = I18nSupport.getValue(BUNDLE_GUI,
+//              "status.text.removed.tasks.0",deleted);
+//      } else if(result == JOptionPane.NO_OPTION)
+//        taskTreePanel.deselectAllTasks();
+//      statusBar.setText(text);
     }
   }
 }
@@ -786,8 +826,8 @@ class TaskEditorPanel extends JPanel {
 //  private JCheckBox permanentCheckBox;
   private JLabel nameLabel;
   private JTextField nameField;
-  private JLabel categoryLabel;
-  private JTextField categoryField;
+//  private JLabel categoryLabel;
+//  private JTextField categoryField;
   private JLabel dueDateLabel;
   private JDateChooser dueDateChooser;
   private JLabel attributionLabel;
@@ -827,7 +867,7 @@ class TaskEditorPanel extends JPanel {
         Component thisPanel = (Component) e.getSource();
         while(!(thisPanel instanceof TaskEditorPanel) && thisPanel != null)
           thisPanel = thisPanel.getParent();
-        TodoFrame.getTodoFrame().closeTask((TaskEditorPanel) thisPanel, getUnchangedTask());
+//        frame.closeTask((TaskEditorPanel) thisPanel, getUnchangedTask());
       }
     });
 
@@ -855,19 +895,19 @@ class TaskEditorPanel extends JPanel {
     row++;
 
     /* Category part */
-    categoryLabel = new JLabel();
-    categoryField = new JTextField(task.getCategory().toString());
-
-    dim = categoryLabel.getPreferredSize();
-    categoryLabel.setMaximumSize(new Dimension(dim.width + 5, dim.height));
-    categoryField.setMaximumSize(new Dimension(Integer.MAX_VALUE,
-        categoryField.getPreferredSize().height));
-    categoryField.addKeyListener(fieldKeyListener);
-
-    add(categoryLabel, GUIUtilities.createConstraints(0, row));
-    add(categoryField, GUIUtilities.createConstraints(1, row, 2, 1,
-        GridBagConstraints.HORIZONTAL));
-    row++;
+//    categoryLabel = new JLabel();
+//    categoryField = new JTextField(task.getCategory().toString());
+//
+//    dim = categoryLabel.getPreferredSize();
+//    categoryLabel.setMaximumSize(new Dimension(dim.width + 5, dim.height));
+//    categoryField.setMaximumSize(new Dimension(Integer.MAX_VALUE,
+//        categoryField.getPreferredSize().height));
+//    categoryField.addKeyListener(fieldKeyListener);
+//
+//    add(categoryLabel, GUIUtilities.createConstraints(0, row));
+//    add(categoryField, GUIUtilities.createConstraints(1, row, 2, 1,
+//        GridBagConstraints.HORIZONTAL));
+//    row++;
 
     /* Due date part */
     dueDateLabel = new JLabel();
@@ -939,17 +979,17 @@ class TaskEditorPanel extends JPanel {
 //    row++;
 
     /* Description part */
-    descriptionArea = new JTextArea(task.getDescription());
-    JScrollPane descriptionPane = new JScrollPane(descriptionArea);
-
-    descriptionPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-    descriptionPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-    dim = descriptionPane.getPreferredSize();
-    descriptionPane.setPreferredSize(new Dimension(dim.width, dim.height*2));
-    descriptionPane.setMinimumSize(descriptionPane.getPreferredSize());
-    descriptionPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-    add(descriptionPane, GUIUtilities.createConstraints(0, row, 3, 1,
-        GridBagConstraints.BOTH, 1.0, 1.0));
+//    descriptionArea = new JTextArea(task.getDescription());
+//    JScrollPane descriptionPane = new JScrollPane(descriptionArea);
+//
+//    descriptionPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+//    descriptionPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+//    dim = descriptionPane.getPreferredSize();
+//    descriptionPane.setPreferredSize(new Dimension(dim.width, dim.height*2));
+//    descriptionPane.setMinimumSize(descriptionPane.getPreferredSize());
+//    descriptionPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+//    add(descriptionPane, GUIUtilities.createConstraints(0, row, 3, 1,
+//        GridBagConstraints.BOTH, 1.0, 1.0));
   }
 
   public Task getUnchangedTask() {
@@ -962,13 +1002,14 @@ class TaskEditorPanel extends JPanel {
       dueDate = dueDateChooser.getCalendar().getTimeInMillis();
     else dueDate = System.currentTimeMillis();
 
-    return new Task(TaskCategory.parseCategory(categoryField.getText()),nameField.getText(),
-        descriptionArea.getText(), false,
-        /* unused for the HCI&GUI project but will be implemented afterwards */
-        //permanentCheckBox.isSelected(),
-        dueDate,
-        (TaskProperty.Attribution) attrComboBox.getSelectedItem(),
-        (TaskProperty.Priority) priorityComboBox.getSelectedItem());
+    return null;
+//    new Task(unchangedTask.getParent(), nameField.getText(),
+//        descriptionArea.getText(), unchangedTask.isPermanent(),
+//        /* unused for the HCI&GUI project but will be implemented afterwards */
+//        //permanentCheckBox.isSelected(),
+//        dueDate,
+//        (TaskProperty.Attribution) attrComboBox.getSelectedItem(),
+//        (TaskProperty.Priority) priorityComboBox.getSelectedItem());
   }
 
   public void resetI18n() {
@@ -980,8 +1021,8 @@ class TaskEditorPanel extends JPanel {
     nameField.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.task.name.not.empty"));
 
     /* Category part */
-    categoryLabel.setText(I18nSupport.getValue(BUNDLE_GUI, "label.text.category"));
-    categoryField.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.category.format"));
+//    categoryLabel.setText(I18nSupport.getValue(BUNDLE_GUI, "label.text.category"));
+//    categoryField.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.category.format"));
 
     /* Due date part */
     dueDateLabel.setText(I18nSupport.getValue(BUNDLE_GUI, "label.text.due.date"));
@@ -1053,7 +1094,7 @@ class TaskEditorPanel extends JPanel {
         Component thisPanel = e.getComponent();
         while(!(thisPanel instanceof TaskEditorPanel) && thisPanel != null)
           thisPanel = thisPanel.getParent();
-        TodoFrame.getTodoFrame().closeTask((TaskEditorPanel) thisPanel, getUnchangedTask());
+//        TodoFrame.getTodoFrame().closeTask((TaskEditorPanel) thisPanel, getUnchangedTask());
       }
     }
   }

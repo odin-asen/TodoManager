@@ -1,11 +1,9 @@
 package business;
 
-import dto.DTOTask;
-import dto.TaskProperty;
+import dto.TaskProperty.Attribution;
+import dto.TaskProperty.Priority;
 
 import java.util.Calendar;
-
-import static dto.TaskProperty.Priority;
 
 /**
  * User: Timm Herrmann
@@ -16,39 +14,36 @@ import static dto.TaskProperty.Priority;
  * reflection purposes.
  */
 public class Task {
-  private TaskCategory category;
   private String name;
   private Boolean permanent;
   private Long dueDate;
-  private TaskProperty.Attribution attribution;
+  private Attribution attribution;
   private Priority priority;
   private String description;
 
   /* Constructors */
 
   public Task() {
-    this(new TaskCategory(""), "", "", false,
-        Calendar.getInstance().getTimeInMillis(),
-        TaskProperty.Attribution.NOTHING, Priority.MEDIUM);
+    this("", false, Calendar.getInstance().getTimeInMillis(), Attribution.NOTHING,
+        Priority.MEDIUM, "");
   }
 
-  public Task(TaskCategory category, String name, String description,
-              boolean permanent, Long timeInMillis, TaskProperty.Attribution attribution,
-              Priority priority) {
-    this.category = category;
-    this.name = name;
-    this.description = description;
-    this.permanent = permanent;
-    this.dueDate = timeInMillis;
-    this.attribution = attribution;
-    this.priority = priority;
+  public Task(String name, Boolean permanent, Long timeInMillis, Attribution attribution,
+              Priority priority, String description) {
+    setName(name);
+    setPermanent(permanent);
+    setDueDate(timeInMillis);
+    setAttribution(attribution);
+    setPriority(priority);
+    setDescription(description);
+  }
+
+  public Task(Task task) {
+    this(task.getName(), task.isPermanent(), task.getDueDate(), task.getAttribution(),
+        task.getPriority(), task.getDescription());
   }
 
   /* Methods */
-
-  public String toString() {
-    return toDTO(this).toString();
-  }
 
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -56,66 +51,57 @@ public class Task {
 
     Task task = (Task) o;
 
-    return category.equals(task.category) &&
-        description.equals(task.description) &&
-        dueDate.equals(task.dueDate) &&
-        attribution == task.attribution && name.equals(task.name) &&
+    return attribution == task.attribution && description.equals(task.description)
+        && dueDate.equals(task.dueDate) && name.equals(task.name) &&
         permanent.equals(task.permanent) && priority == task.priority;
   }
 
   public int hashCode() {
-    int result = category.hashCode();
-    result = 31 * result + name.hashCode();
-    result = 31 * result + description.hashCode();
+    int result = name.hashCode();
     result = 31 * result + permanent.hashCode();
     result = 31 * result + dueDate.hashCode();
     result = 31 * result + attribution.hashCode();
     result = 31 * result + priority.hashCode();
+    result = 31 * result + description.hashCode();
     return result;
   }
 
-  public static DTOTask toDTO(Task task) {
-    final DTOTask dto = new DTOTask();
-    dto.category = task.getCategory().toString();
-    dto.description = task.getDescription();
-    dto.dueDate = task.getDueDate();
-    dto.attribution = task.getAttribution();
-    dto.name = task.getName();
-    dto.permanent = task.isPermanent();
-    dto.priority = task.getPriority();
-    return dto;
-  }
-
-  public static Task fromDTO(DTOTask dto) {
-    final Task task = new Task();
-    task.setCategory(dto.category);
-    task.setDescription(dto.description);
-    task.setDueDate(dto.dueDate);
-    task.setAttribution(dto.attribution);
-    task.setName(dto.name);
-    task.setPermanent(dto.permanent);
-    task.setPriority(dto.priority);
-    return task;
-  }
-
+//  public static DTOTask toDTO(Task task) {
+//    if(task == null)
+//      return null;
+//
+//    final DTOTask dto = new DTOTask();
+//    dto.children = task.children;
+//    dto.description = task.getDescription();
+//    dto.dueDate = task.getDueDate();
+//    dto.attribution = task.getAttribution();
+//    dto.name = task.getName();
+//    dto.permanent = task.isPermanent();
+//    dto.priority = task.getPriority();
+//    return dto;
+//  }
+//
+//  public static Task fromDTO(DTOTask dto) {
+//    if(dto == null)
+//      return null;
+//
+//    final Task task = new Task();
+//    if(dto.children != null) {
+//      for (Task child : dto.children)
+//        task.addChild(child);
+//    }
+//    task.setParent(fromDTO(dto.parent));
+//    task.setDescription(dto.description);
+//    task.setDueDate(dto.dueDate);
+//    task.setAttribution(dto.attribution);
+//    task.setName(dto.name);
+//    task.setPermanent(dto.permanent);
+//    task.setPriority(dto.priority);
+//
+//    return task;
+//  }
 
   /* Getter and Setter */
-
-  public TaskCategory getCategory() {
-    return category;
-  }
-
-  @SuppressWarnings("UnusedDeclaration")
-  public void setCategory(TaskCategory category) {
-    assert category != null;
-    this.category = new TaskCategory(category.getName(), category.getParent());
-  }
-
-  public void setCategory(String toParse) {
-    if(toParse != null)
-      category = TaskCategory.parseCategory(toParse);
-    else category = new TaskCategory("");
-  }
 
   public String getName() {
     return name;
@@ -125,22 +111,12 @@ public class Task {
     this.name = name != null ? name : "";
   }
 
-  public String getDescription() {
-    return description;
-  }
-
-  public void setDescription(String description) {
-    this.description = description != null ? description : "";
-  }
-
   public Long getDueDate() {
     return dueDate;
   }
 
   public void setDueDate(Long timeInMillis) {
-    if(timeInMillis != null)
-      dueDate = timeInMillis;
-    else dueDate = Calendar.getInstance().getTimeInMillis();
+    this.dueDate = timeInMillis != null ? timeInMillis : Long.MAX_VALUE;
   }
 
   public Boolean isPermanent() {
@@ -148,15 +124,15 @@ public class Task {
   }
 
   public void setPermanent(Boolean permanent) {
-    this.permanent = permanent != null ? permanent : Boolean.valueOf(false);
+    this.permanent = permanent != null ? permanent : false;
   }
 
-  public TaskProperty.Attribution getAttribution() {
+  public Attribution getAttribution() {
     return attribution;
   }
 
-  public void setAttribution(TaskProperty.Attribution attribution) {
-    this.attribution = attribution != null ? attribution : TaskProperty.Attribution.NOTHING;
+  public void setAttribution(Attribution attribution) {
+    this.attribution = attribution != null ? attribution : Attribution.NOTHING;
   }
 
   public Priority getPriority() {
@@ -165,5 +141,13 @@ public class Task {
 
   public void setPriority(Priority priority) {
     this.priority = priority != null ? priority : Priority.MEDIUM;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description != null ? description : "";
   }
 }
