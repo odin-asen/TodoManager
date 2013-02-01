@@ -14,7 +14,8 @@ public class FramePosition {
   private final int height;
   private final Rectangle bounds;
 
-  private FramePosition(Dimension screenSize, float frameToScreenWidthRatio, float frameToScreenHeightRatio) {
+  private FramePosition(Dimension screenSize, float frameToScreenWidthRatio,
+                        float frameToScreenHeightRatio) {
     if(screenSize == null)
       screenSize = new Dimension(1366,768);
 
@@ -25,7 +26,8 @@ public class FramePosition {
     bounds = new Rectangle(posX,posY, width, height);
   }
 
-  public static FramePosition createFramePosition(float frameToScreenWidthRatio, float frameToScreenHeightRatio) {
+  public static FramePosition createFramePosition(float frameToScreenWidthRatio,
+                                                  float frameToScreenHeightRatio) {
     Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
     return new FramePosition(screenSize, frameToScreenWidthRatio, frameToScreenHeightRatio);
   }

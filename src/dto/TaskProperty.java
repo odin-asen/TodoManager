@@ -6,14 +6,14 @@ import resources.ResourceList;
 
 import javax.swing.*;
 
+import static i18n.BundleStrings.MISC;
+
 /**
 * User: Timm Herrmann
 * Date: 11.12.12
 * Time: 00:49
 */
 public interface TaskProperty {
-  String BUNDLE_GUI = "gui"; //NON-NLS
-
   public enum Attribution {
     NOTHING(null),
     BIRTHDAY(ResourceGetter.getImage(ResourceList.IMAGE_ATTRIBUTION_BIRTHDAY,"")),
@@ -28,10 +28,14 @@ public interface TaskProperty {
 
     public String getDescription() {
       final String description;
-      if(this.equals(BIRTHDAY)) description = I18nSupport.getValue(BUNDLE_GUI, "task.attribution.birthday");
-      else if(this.equals(FREE_TIME)) description = I18nSupport.getValue(BUNDLE_GUI, "task.attribution.free.time");
-      else if(this.equals(NOTHING)) description = I18nSupport.getValue(BUNDLE_GUI, "task.attribution.nothing");
-      else if(this.equals(WORK)) description = I18nSupport.getValue(BUNDLE_GUI, "task.attribution.work");
+      if(this.equals(BIRTHDAY))
+        description = I18nSupport.getValue(MISC, "task.attribution.birthday");
+      else if(this.equals(FREE_TIME))
+        description = I18nSupport.getValue(MISC, "task.attribution.free.time");
+      else if(this.equals(NOTHING))
+        description = I18nSupport.getValue(MISC, "task.attribution.nothing");
+      else if(this.equals(WORK))
+        description = I18nSupport.getValue(MISC, "task.attribution.work");
       else description = "";
       return description;
     }
@@ -56,11 +60,16 @@ public interface TaskProperty {
 
     public String getDescription() {
       final String description;
-      if(this.equals(LOWEST)) description = I18nSupport.getValue(BUNDLE_GUI, "task.priority.lowest");
-      else if(this.equals(LOW)) description = I18nSupport.getValue(BUNDLE_GUI, "task.priority.low");
-      else if(this.equals(MEDIUM)) description = I18nSupport.getValue(BUNDLE_GUI, "task.priority.medium");
-      else if(this.equals(HIGH)) description = I18nSupport.getValue(BUNDLE_GUI, "task.priority.high");
-      else if(this.equals(HIGHEST)) description = I18nSupport.getValue(BUNDLE_GUI, "task.priority.highest");
+      if(this.equals(LOWEST))
+        description = I18nSupport.getValue(MISC, "task.priority.lowest");
+      else if(this.equals(LOW))
+        description = I18nSupport.getValue(MISC, "task.priority.low");
+      else if(this.equals(MEDIUM))
+        description = I18nSupport.getValue(MISC, "task.priority.medium");
+      else if(this.equals(HIGH))
+        description = I18nSupport.getValue(MISC, "task.priority.high");
+      else if(this.equals(HIGHEST))
+        description = I18nSupport.getValue(MISC, "task.priority.highest");
       else description = "";
       return description;
     }

@@ -28,6 +28,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import static i18n.BundleStrings.COMPONENTS;
+import static i18n.BundleStrings.MISC;
+
 /**
  * User: Timm Herrmann
  * Date: 04.12.12
@@ -90,7 +93,7 @@ public class TodoFrame extends JFrame {
 
   private String getTitleString() {
     String title = MessageFormat.format("{0} - {1} {2}",
-        I18nSupport.getValue(BUNDLE_GUI, "application.title"),
+        I18nSupport.getValue(BUNDLE_GUI, "application"),
         I18nSupport.getValue(BUNDLE_GUI, "version"), VERSION_NUMBER);
     if(getCurrentFile().exists())
       title = title + " - "+getCurrentFile().getAbsolutePath();
@@ -111,7 +114,7 @@ public class TodoFrame extends JFrame {
     menuBar = new JMenuBar();
 
     /* initialise the file menu */
-    menu = new JMenu(I18nSupport.getValue(BUNDLE_GUI,"menu.text.file"));
+    menu = new JMenu(I18nSupport.getValue(BUNDLE_GUI, "text.file"));
     addMenuItem(menu, AC_OPEN_FILE, ResourceGetter.getImage(ResourceList.IMAGE_OPEN_FILE, ""),
         KeyStroke.getKeyStroke(KeyEvent.VK_O,ctrl), fileMenuAL);
     addMenuItem(menu, AC_SAVE, ResourceGetter.getImage(ResourceList.IMAGE_SAVE_FILE, ""),
@@ -123,8 +126,8 @@ public class TodoFrame extends JFrame {
 
     /* initialise the settings menu */
     ButtonGroup languageGroup = new ButtonGroup();
-    menu = new JMenu(I18nSupport.getValue(BUNDLE_GUI,"menu.text.settings"));
-    JMenu pullRight = new JMenu(I18nSupport.getValue(BUNDLE_GUI,"menu.text.language"));
+    menu = new JMenu(I18nSupport.getValue(BUNDLE_GUI, "text.settings"));
+    JMenu pullRight = new JMenu(I18nSupport.getValue(BUNDLE_GUI, "text.language"));
     item = addMenuItem(pullRight, AC_LANGUAGE_GER, null, settingsMenuAL, ItemType.RADIO_BUTTON);
     languageGroup.add(item);
     item = addMenuItem(pullRight, AC_LANGUAGE_ENG, null, settingsMenuAL, ItemType.RADIO_BUTTON);
@@ -133,7 +136,7 @@ public class TodoFrame extends JFrame {
     menuBar.add(menu);
 
     /* initialise the task menu */
-    menu = new JMenu(I18nSupport.getValue(BUNDLE_GUI,"menu.text.task"));
+    menu = new JMenu(I18nSupport.getValue(BUNDLE_GUI, "text.task"));
     addMenuItem(menu, AC_ADD_TASK, ResourceGetter.getImage(ResourceList.IMAGE_PLUS_GREEN, ""),
         KeyStroke.getKeyStroke(KeyEvent.VK_A,ctrl), taskMenuAL);
     addMenuItem(menu, AC_EDIT_TASK, ResourceGetter.getImage(ResourceList.IMAGE_EDIT, ""),
@@ -223,58 +226,58 @@ public class TodoFrame extends JFrame {
 
   private void resetToolBarI18n() {
     JButton button = (JButton) toolBar.getComponent(0);
-    button.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.open.list"));
+    button.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.open.list"));
     button = (JButton) toolBar.getComponent(1);
-    button.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.save.list"));
+    button.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.save.list"));
     /* component index 2 is a separator */
     button = (JButton) toolBar.getComponent(3);
-    button.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.add.task"));
+    button.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.add.task"));
     button = (JButton) toolBar.getComponent(4);
-    button.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.edit.task"));
+    button.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.edit.task"));
     button = (JButton) toolBar.getComponent(5);
-    button.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.remove.task"));
+    button.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.remove.task"));
   }
 
   private void resetMenuItemsI18n() {
     /* reset the file menu */
     JMenu menu = menuBar.getMenu(0);
-    menu.setText(I18nSupport.getValue(BUNDLE_GUI,"menu.text.file"));
+    menu.setText(I18nSupport.getValue(BUNDLE_GUI, "text.file"));
     JMenuItem item = ((JMenuItem) menu.getMenuComponent(0));
-    item.setText(I18nSupport.getValue(BUNDLE_GUI,"menu.item.text.load.list"));
+    item.setText(I18nSupport.getValue(BUNDLE_GUI, "text.load.list"));
     item = ((JMenuItem) menu.getMenuComponent(1));
-    item.setText(I18nSupport.getValue(BUNDLE_GUI,"menu.item.text.save"));
+    item.setText(I18nSupport.getValue(BUNDLE_GUI, "text.save"));
     item = ((JMenuItem) menu.getMenuComponent(2));
-    item.setText(I18nSupport.getValue(BUNDLE_GUI,"menu.item.text.save.as"));
+    item.setText(I18nSupport.getValue(BUNDLE_GUI, "text.save.as"));
     //item 3 is a separator
     item = ((JMenuItem) menu.getMenuComponent(4));
-    item.setText(I18nSupport.getValue(BUNDLE_GUI, "menu.item.text.close"));
+    item.setText(I18nSupport.getValue(BUNDLE_GUI, "text.close"));
 
 
     /* reset the settings menu */
     menu = menuBar.getMenu(1);
-    menu.setText(I18nSupport.getValue(BUNDLE_GUI,"menu.text.settings"));
+    menu.setText(I18nSupport.getValue(BUNDLE_GUI, "text.settings"));
 
     /* language popup menu section */
     JMenu language = (JMenu) menu.getMenuComponent(0);
-    language.setText(I18nSupport.getValue(BUNDLE_GUI,"menu.text.language"));
+    language.setText(I18nSupport.getValue(BUNDLE_GUI, "text.language"));
     item = ((JMenuItem) language.getMenuComponent(0));
-    item.setText(I18nSupport.getValue(BUNDLE_GUI,"menu.item.text.german"));
+    item.setText(I18nSupport.getValue(BUNDLE_GUI, "text.german"));
     final Locale locale = Locale.getDefault();
     final boolean german = locale.equals(Locale.GERMAN) || locale.equals(Locale.GERMANY);
     if(german) item.setSelected(true);
     item = ((JMenuItem) language.getMenuComponent(1));
-    item.setText(I18nSupport.getValue(BUNDLE_GUI,"menu.item.text.english"));
+    item.setText(I18nSupport.getValue(BUNDLE_GUI, "text.english"));
     if(!german) item.setSelected(true);
 
     /* reset the task menu */
     menu = menuBar.getMenu(2);
-    menu.setText(I18nSupport.getValue(BUNDLE_GUI,"menu.text.task"));
+    menu.setText(I18nSupport.getValue(BUNDLE_GUI, "text.task"));
     item = ((JMenuItem) menu.getMenuComponent(0));
-    item.setText(I18nSupport.getValue(BUNDLE_GUI,"menu.item.text.add.task"));
+    item.setText(I18nSupport.getValue(BUNDLE_GUI, "text.add.task"));
     item = ((JMenuItem) menu.getMenuComponent(1));
-    item.setText(I18nSupport.getValue(BUNDLE_GUI, "menu.item.text.edit.task"));
+    item.setText(I18nSupport.getValue(BUNDLE_GUI, "text.edit.task"));
     item = ((JMenuItem) menu.getMenuComponent(2));
-    item.setText(I18nSupport.getValue(BUNDLE_GUI, "menu.item.text.remove.task"));
+    item.setText(I18nSupport.getValue(BUNDLE_GUI, "text.remove.task"));
   }
 
   private void resetSelectorCalendarI18n() {
@@ -416,9 +419,9 @@ public class TodoFrame extends JFrame {
 
   private void changeDueDateDialog(Date newDate) {
     int result;
-    String[] strings = {I18nSupport.getValue(BUNDLE_GUI, "dialog.button.change"),
-        I18nSupport.getValue(BUNDLE_GUI, "dialog.button.do.not.change"),
-        I18nSupport.getValue(BUNDLE_GUI, "dialog.button.not.sure")};
+    String[] strings = {I18nSupport.getValue(BUNDLE_GUI, "text.change"),
+        I18nSupport.getValue(BUNDLE_GUI, "text.do.not.change"),
+        I18nSupport.getValue(BUNDLE_GUI, "text.not.sure")};
     final DateFormat format = new SimpleDateFormat(I18nSupport.getValue(
         BUNDLE_GUI, "format.due.date"), Locale.getDefault());
     String dateString = format.format(newDate);
@@ -519,9 +522,9 @@ public class TodoFrame extends JFrame {
 
     private void closeApplication() {
       int result = JOptionPane.NO_OPTION;
-      String[] strings = {I18nSupport.getValue(BUNDLE_GUI, "dialog.button.close.and.save"),
-          I18nSupport.getValue(BUNDLE_GUI, "dialog.button.close.without.saving"),
-          I18nSupport.getValue(BUNDLE_GUI, "dialog.button.not.sure")};
+      String[] strings = {I18nSupport.getValue(BUNDLE_GUI, "text.close.and.save"),
+          I18nSupport.getValue(BUNDLE_GUI, "text.close.without.saving"),
+          I18nSupport.getValue(BUNDLE_GUI, "text.not.sure")};
 
       if(hasChanged()) {
         result = GUIUtilities.showConfirmDialog(frame, strings,
@@ -617,11 +620,11 @@ public class TodoFrame extends JFrame {
       if(AC_LANGUAGE_ENG.equals(e.getActionCommand())) {
         Locale.setDefault(Locale.UK);
         resetI18n();
-        statusBar.setText(I18nSupport.getValue(BUNDLE_GUI, "status.changed.language"));
+        statusBar.setText(I18nSupport.getValue(BUNDLE_GUI, "changed.language"));
       } else if(AC_LANGUAGE_GER.equals(e.getActionCommand())) {
         Locale.setDefault(Locale.GERMANY);
         resetI18n();
-        statusBar.setText(I18nSupport.getValue(BUNDLE_GUI, "status.changed.language"));
+        statusBar.setText(I18nSupport.getValue(BUNDLE_GUI, "changed.language"));
       }
     }
   }
@@ -817,7 +820,6 @@ class GUIUtilities {
 }
 
 class TaskEditorPanel extends JPanel {
-  private static final String BUNDLE_GUI = "gui"; //NON-NLS
   private Color notifyColour;
 
   private Task unchangedTask;
@@ -887,7 +889,7 @@ class TaskEditorPanel extends JPanel {
         nameField.getPreferredSize().height));
     nameField.addKeyListener(fieldKeyListener);
     if(task.getName().isEmpty())
-      nameField.setText(I18nSupport.getValue(BUNDLE_GUI, "default.task.name"));
+      nameField.setText(I18nSupport.getValue(MISC, "default.task.name"));
 
     add(nameLabel, GUIUtilities.createConstraints(0, row));
     add(nameField, GUIUtilities.createConstraints(1, row, 2, 1,
@@ -1014,32 +1016,33 @@ class TaskEditorPanel extends JPanel {
 
   public void resetI18n() {
     /* Close Button */
-    closeButton.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.close"));
+    closeButton.setToolTipText(I18nSupport.getValue(COMPONENTS, "tooltip.close"));
 
     /* Name part */
-    nameLabel.setText(I18nSupport.getValue(BUNDLE_GUI, "label.text.name"));
-    nameField.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.task.name.not.empty"));
+    nameLabel.setText(I18nSupport.getValue(COMPONENTS, "text.name.colon"));
+    nameField.setToolTipText(I18nSupport.getValue(COMPONENTS, "tooltip.task.name.not.empty"));
 
     /* Category part */
 //    categoryLabel.setText(I18nSupport.getValue(BUNDLE_GUI, "label.text.category"));
 //    categoryField.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.category.format"));
 
     /* Due date part */
-    dueDateLabel.setText(I18nSupport.getValue(BUNDLE_GUI, "label.text.due.date"));
+    dueDateLabel.setText(I18nSupport.getValue(COMPONENTS, "text.due.date.colon"));
     dueDateChooser.setLocale(Locale.getDefault());
 
     /* Attribution part */
-    attributionLabel.setText(I18nSupport.getValue(BUNDLE_GUI, "label.text.attribution"));
+    attributionLabel.setText(I18nSupport.getValue(COMPONENTS, "text.attribution.colon"));
 
     /* Priority part */
-    priorityLabel.setText(I18nSupport.getValue(BUNDLE_GUI, "label.text.priority"));
+    priorityLabel.setText(I18nSupport.getValue(COMPONENTS, "text.priority.colon"));
 
     /* unused for the HCI&GUI project but will be implemented afterwards */
     /* Permanent part */
 //    permanentCheckBox.setText(I18nSupport.getValue(BUNDLE_GUI, "checkbox.text.permanent"));
 
     /* Description part */
-    descriptionArea.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.enter.description"));
+    descriptionArea.setToolTipText(
+        I18nSupport.getValue(COMPONENTS, "tooltip.enter.description"));
   }
 
   public boolean isCreatedNew() {

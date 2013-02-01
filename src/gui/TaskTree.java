@@ -21,17 +21,16 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseListener;
 import java.util.List;
 
+import static i18n.BundleStrings.COMPONENTS;
+
 /**
  * User: Timm Herrmann
  * Date: 04.12.12
  * Time: 22:43
  */
 public class TaskTree extends JPanel {
-  /* constants */
-  private static final String BUNDLE_GUI = "gui"; //NON-NLS
   public static final Color LIST_BACKGROUND = new Color(242, 241, 240);
 
-  /* Action commands */
   private static final String AC_COLLAPSE_ALL = "collapse"; //NON-NLS
   private static final String AC_EXPAND_ALL = "expand"; //NON-NLS
 
@@ -127,9 +126,9 @@ public class TaskTree extends JPanel {
 
   public void resetI18n() {
     JButton button = (JButton) toolBar.getComponent(0);
-    button.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.expand.all"));
+    button.setToolTipText(I18nSupport.getValue(COMPONENTS, "tooltip.expand.all"));
     button = (JButton) toolBar.getComponent(1);
-    button.setToolTipText(I18nSupport.getValue(BUNDLE_GUI, "tooltip.text.collapse.all"));
+    button.setToolTipText(I18nSupport.getValue(COMPONENTS, "tooltip.collapse.all"));
   }
 
   /* initialise the list and fill with a new task list */
@@ -192,8 +191,6 @@ public class TaskTree extends JPanel {
 }
 
 class TaskTreeCellRenderer extends DefaultTreeCellRenderer {
-  private static final String BUNDLE_GUI = "gui"; //NON-NLS
-
   public TaskTreeCellRenderer() {
   }
 

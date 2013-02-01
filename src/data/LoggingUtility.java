@@ -13,7 +13,7 @@ public class LoggingUtility {
   public static final String SHORT_STARS = "*****";
   private static final String DEFAULT_NAME = "defaultLog.txt"; //NON-NLS
   private static Handler handler = null;
-  private static boolean logFileChangable = true;
+  private static boolean logFileChangeable = true;
   private static final Logger LOGGER = Logger.getLogger(LoggingUtility.class.getName());
   private static Level level = Level.INFO;
 
@@ -25,14 +25,14 @@ public class LoggingUtility {
    * @return Returns true, if the path was changed and false if it wasn't.
    */
   public static boolean setFirstTimeLoggingFile(String fileName) {
-    if(!logFileChangable)
+    if(!logFileChangeable)
       return false;
 
     try {
       final SimpleFormatter formatter = new SimpleFormatter();
       handler = new FileHandler(fileName);
       handler.setFormatter(formatter);
-      logFileChangable = false;
+      logFileChangeable = false;
     } catch (IOException e) {
       LOGGER.severe("Error opening file \"" + fileName + "\": "+e.getMessage());
       return false;

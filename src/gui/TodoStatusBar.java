@@ -14,13 +14,14 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 
+import static i18n.BundleStrings.*;
+
 /**
  * User: Timm Herrmann
  * Date: 08.10.12
  * Time: 19:37
  */
 public class TodoStatusBar extends JPanel implements Runnable {
-  private static final String BUNDLE_GUI = "gui"; //NON-NLS
   private static final Dimension MINIMUM_DIMENSION = new Dimension(16,16);
 
   private static final Border LOWERED_BORDER = BorderFactory.createBevelBorder(BevelBorder.LOWERED);
@@ -88,13 +89,13 @@ public class TodoStatusBar extends JPanel implements Runnable {
       setTaskInformation(null, null, null, null);
     else {
       final DateFormat format = new SimpleDateFormat(I18nSupport.getValue(
-          BUNDLE_GUI, "format.due.date"), Locale.getDefault());
+          MISC, "format.due.date"), Locale.getDefault());
       final Calendar calendar = Calendar.getInstance();
       calendar.setTimeInMillis(task.getDueDate());
       setTaskInformation(task.getAttribution(),
           format.format(calendar.getTime()), task.getName(),
-          I18nSupport.getValue(BUNDLE_GUI, "label.tooltip.category.0", task.getName()));
-      setText(I18nSupport.getValue(BUNDLE_GUI, "status.selected.task"));
+          I18nSupport.getValue(COMPONENTS, "tooltip.category.0", task.getName()));
+      setText(I18nSupport.getValue(MESSAGES, "selected.task"));
     }
   }
 
@@ -140,7 +141,7 @@ public class TodoStatusBar extends JPanel implements Runnable {
 
   public void resetI18n() {
     calendar = GregorianCalendar.getInstance(Locale.getDefault());
-    format = new SimpleDateFormat(I18nSupport.getValue(BUNDLE_GUI, "format.date"),
+    format = new SimpleDateFormat(I18nSupport.getValue(MISC, "format.date"),
         Locale.getDefault());
     format.setCalendar(calendar);
     setTaskInformation(null,"","","");

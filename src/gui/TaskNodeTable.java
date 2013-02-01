@@ -19,6 +19,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static i18n.BundleStrings.COMPONENTS;
+
 /**
  * User: Timm Herrmann
  * Date: 27.01.13
@@ -81,7 +83,6 @@ public class TaskNodeTable extends JComponent {
 }
 
 class TaskTableModel implements TableModel {
-  private static final String GUI_BUNDLE = "gui"; //NON-NLS
   private static final List<Method> GETTER = ReflectionUtility.getSortedGetters(Task.class);
   private static final List<Method> SETTER = ReflectionUtility.getSortedSetters(Task.class);
   private static final Logger LOGGER =
@@ -133,7 +134,7 @@ class TaskTableModel implements TableModel {
 
   public String getColumnName(int columnIndex) {
     checkIndex(columnIndex, columnCount);
-    return I18nSupport.getValue(GUI_BUNDLE, "text." + columnNames.get(columnIndex));
+    return I18nSupport.getValue(COMPONENTS, "text." + columnNames.get(columnIndex));
   }
 
   public Class<?> getColumnClass(int columnIndex) {

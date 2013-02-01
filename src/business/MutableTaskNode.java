@@ -1,5 +1,8 @@
 package business;
 
+import i18n.BundleStrings;
+import i18n.I18nSupport;
+
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.util.ArrayList;
@@ -134,7 +137,7 @@ public class MutableTaskNode implements MutableTreeNode {
 
   public static MutableTaskNode getRootInstance() {
     final Task task = new Task();
-    task.setName("Meine Liste"); //TODO durch I18n ersetzen
+    task.setName(I18nSupport.getValue(BundleStrings.COMPONENTS, "text.my.list"));
     return new MutableTaskNode(task);
   }
 
