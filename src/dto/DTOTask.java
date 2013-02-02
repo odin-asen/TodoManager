@@ -18,6 +18,17 @@ public class DTOTask {
   public Attribution attribution;
   public String description;
 
+  public DTOTask() {
+    id = null;
+    parentID = null;
+    name = null;
+    permanent = null;
+    dueDate = null;
+    priority = null;
+    attribution = null;
+    description = null;
+  }
+
   @Override
   public String toString() {
     return "DTOTask{" +

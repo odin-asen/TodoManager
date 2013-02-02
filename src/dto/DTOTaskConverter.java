@@ -70,8 +70,12 @@ public class DTOTaskConverter implements Converter {
     setPriority(value, task);
     value = reader.getAttribute(NAME_ATTRIBUTION);
     setAttribution(value, task);
-    value = reader.getAttribute(NAME_DESCRIPTION);
-    setDescription(value, task);
+    if(reader.hasMoreChildren()) {
+      reader.moveDown();
+      value = reader.getValue();
+      setDescription(value, task);
+      reader.moveUp();
+    }
     return task;
   }
 

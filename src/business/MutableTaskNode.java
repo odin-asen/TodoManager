@@ -72,7 +72,11 @@ public class MutableTaskNode implements MutableTreeNode {
    * @return An Enumeration with MutableTaskNode objects.
    */
   public Enumeration<MutableTaskNode> children() {
-    return Collections.enumeration(children.getList());
+    final List<MutableTaskNode> nodes =
+        new ArrayList<MutableTaskNode>(children.getList().size());
+    for (MutableTaskNode child : children.getList())
+      nodes.add(child);
+    return Collections.enumeration(nodes);
   }
 
   public void insert(MutableTreeNode child, int index) {
@@ -101,7 +105,8 @@ public class MutableTaskNode implements MutableTreeNode {
 
   public void remove(MutableTreeNode node) {
     if(node instanceof MutableTaskNode) {
-      children.removeFromFirst((MutableTaskNode) node);
+      if(!children.removeFromFirst((MutableTaskNode) node))
+        children.removeFromSecond((MutableTaskNode) node);
       isUpperTask = !(getChildCount() == 0);
     }
   }
@@ -247,7 +252,7 @@ class TwoHalfList<T> {
     assert invariant() : getAssertMessage();
     boolean removed = false;
 
-    if(isIndexValid(list.indexOf(element)-secondSize, secondSize)) {
+    if(isIndexValid(list.indexOf(element)-firstSize, secondSize)) {
       if(list.remove(element)) {
         secondSize--;
         removed = true;

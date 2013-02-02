@@ -11,6 +11,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 import java.awt.*;
+import java.awt.event.MouseListener;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -53,10 +54,10 @@ public class TaskNodeTable extends JComponent {
   }
 
   public void showNode(MutableTaskNode node) {
+    currentNode = node;
+    model.clear();
     if(node != null) {
-      currentNode = node;
       final Enumeration<MutableTaskNode> children = node.children();
-      model.clear();
       while(children.hasMoreElements())
         model.add(children.nextElement().getTask());
     }
@@ -64,6 +65,14 @@ public class TaskNodeTable extends JComponent {
 
   public void updateTable() {
     showNode(currentNode);
+  }
+
+  public void resetI18n() {
+    model.resetI18n();
+  }
+
+  public void addTableMouseListener(MouseListener listener) {
+    table.addMouseListener(listener);
   }
 
   /* Getter and Setter */
@@ -193,5 +202,9 @@ class TaskTableModel implements TableModel {
       notifyListeners(new TableModelEvent(this, 0, lastIndex, TableModelEvent.ALL_COLUMNS,
           TableModelEvent.DELETE));
     }
+  }
+
+  public void resetI18n() {
+    notifyListeners(new TableModelEvent(this, TableModelEvent.HEADER_ROW, getRowCount()));
   }
 }

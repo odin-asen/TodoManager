@@ -3,6 +3,7 @@ package gui;
 import business.MutableTaskNode;
 import business.Task;
 import business.TaskTreeModel;
+import dto.DTOTask;
 import dto.TaskProperty;
 import i18n.I18nSupport;
 import resources.ResourceGetter;
@@ -19,6 +20,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 import static i18n.BundleStrings.COMPONENTS;
@@ -74,9 +77,7 @@ public class TaskTree extends JPanel {
       return tree;
 
     tree = new JTree();
-    final Task root = new Task();
-    root.setName("Meine Tasks");
-    model = new TaskTreeModel(new MutableTaskNode(root));
+    model = new TaskTreeModel(MutableTaskNode.getRootInstance());
     tree.setModel(model);
     tree.setBackground(LIST_BACKGROUND);
     tree.setCellRenderer(new TaskTreeCellRenderer());
@@ -131,40 +132,44 @@ public class TaskTree extends JPanel {
     button.setToolTipText(I18nSupport.getValue(COMPONENTS, "tooltip.collapse.all"));
   }
 
-  /* initialise the list and fill with a new task list */
-  public void setTasks(List<Task> tasks) {
-    //TODO
-  }
-
   /* add tasks to the current list */
   public void addTasks(List<Task> tasks) {
     //TODO
   }
 
-  public void addTask(Task task) {
-    addTask(task, false);
-  }
-
   /* add tasks to the current list */
-  public void addTask(Task task, boolean expand) {
-    TreePath path = tree.getSelectionPath();
-
+  public MutableTaskNode addTask(boolean expand) {
+    final Task task = new Task();
+    final TreePath path = tree.getSelectionPath();
+    final MutableTaskNode parentNode = path != null ?
+        (MutableTaskNode) path.getLastPathComponent() : (MutableTaskNode) model.getRoot();
     model.add(path, new MutableTaskNode(task));
     listChanged = true;
-    if(expand && path != null)
+
+    if(path == null)
+      tree.setSelectionPath(tree.getPathForRow(0));
+    else if(expand)
       tree.expandPath(path);
+    tree.requestFocus();
+
+    return parentNode;
   }
 
-  /* remove a task from the list */
-  public void removeSelectionPaths() {
+  /**
+   * Removes all selected task and their sub tasks from the list.
+   */
+  public int removeSelectedTasks() {
+    int removed = 0;
     final TreePath[] paths = tree.getSelectionPaths();
-    for (TreePath path : paths) {
-      model.remove(path);
+    if (paths != null) {
+      for (TreePath path : paths)
+        removed = removed + model.remove(path);
+      listChanged = paths.length > 0;
     }
-    listChanged = paths.length > 0;
+    return removed;
   }
 
-  public void removeAllPaths() {
+  public void removeAllTasks() {
     model.remove(null);
   }
 
@@ -175,6 +180,43 @@ public class TaskTree extends JPanel {
   public void expandCollapseTrees(boolean expand) {
     if(expand) tree.expandRow(tree.getRowCount());
     else tree.collapseRow(tree.getRowCount());
+  }
+
+  public List<MutableTaskNode> getSelectedNodes() {
+    final List<MutableTaskNode> list = new ArrayList<MutableTaskNode>();
+    final TreePath[] paths = tree.getSelectionPaths();
+    if (paths != null) {
+      for (TreePath path : paths) {
+        list.add((MutableTaskNode) path.getLastPathComponent());
+      }
+    }
+    return list;
+  }
+
+  public void changeSelectedNodes(DTOTask dtoTask) {
+    final TreePath[] paths = tree.getSelectionPaths();
+    if (paths != null) {
+      for (TreePath path : paths) {
+        changeSubTasks((MutableTaskNode) path.getLastPathComponent(), dtoTask);
+      }
+    }
+  }
+
+  private void changeSubTasks(MutableTaskNode node, DTOTask dtoTask) {
+    final Enumeration<MutableTaskNode> children = node.children();
+    while (children.hasMoreElements()) {
+      changeSubTasks(children.nextElement(), dtoTask);
+    }
+    node.getTask().change(dtoTask);
+  }
+
+  public MutableTaskNode getTaskRoot() {
+    return (MutableTaskNode) model.getRoot();
+  }
+
+  public void setRoot(MutableTaskNode root) {
+    model = new TaskTreeModel(root);
+    tree.setModel(model);
   }
 
   /* Getter and Setter */

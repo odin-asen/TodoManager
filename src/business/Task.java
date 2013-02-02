@@ -1,5 +1,6 @@
 package business;
 
+import dto.DTOTask;
 import dto.TaskProperty.Attribution;
 import dto.TaskProperty.Priority;
 
@@ -59,6 +60,22 @@ public class Task {
     result = 31 * result + priority.hashCode();
     result = 31 * result + description.hashCode();
     return result;
+  }
+
+  /** Changes all non null fields of dtoTask */
+  public void change(DTOTask dtoTask) {
+    if(dtoTask.attribution != null)
+      setAttribution(dtoTask.attribution);
+    if(dtoTask.description != null)
+      setDescription(dtoTask.description);
+    if(dtoTask.dueDate != null)
+      setDueDate(dtoTask.dueDate);
+    if(dtoTask.name != null)
+      setName(dtoTask.name);
+    if(dtoTask.permanent != null)
+      setPermanent(dtoTask.permanent);
+    if(dtoTask.priority != null)
+      setPriority(dtoTask.priority);
   }
 
   /* Getter and Setter */

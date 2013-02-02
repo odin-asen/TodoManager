@@ -5,6 +5,7 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 /**
@@ -87,15 +88,37 @@ public class TaskTreeModel implements TreeModel {
     }
   }
 
-  public void remove(TreePath path) {
-    final MutableTaskNode node = (MutableTaskNode) path.getLastPathComponent();
-    final MutableTaskNode parent = (MutableTaskNode) node.getParent();
-    int index = getIndexOfChild(parent, node);
-    parent.remove(index);
-    final TreeModelEvent event = new TreeModelEvent(
-        this, path.getParentPath(), new int[]{index-1}, new Object[]{node});
+  public int remove(TreePath path) {
+    final int removed;
+    final TreeModelEvent event;
+
+    if(path == null || root.equals(path.getLastPathComponent())) {
+      removed = removeAll();
+      event = new TreeModelEvent(this, new TreePath(root));
+      final Enumeration<MutableTaskNode> nodes = root.children();
+      while (nodes.hasMoreElements())
+        System.out.println(nodes.nextElement());
+    } else {
+      final MutableTaskNode node = (MutableTaskNode) path.getLastPathComponent();
+      int index = getIndexOfChild(node.getParent(), node);
+      removed = node.countAllSubNodes();
+
+      node.remove(index);
+      event = new TreeModelEvent(this, path.getParentPath(),
+          new int[]{index-1}, new Object[]{node});
+    }
     for (TreeModelListener listener : listeners)
       listener.treeNodesRemoved(event);
+
+    return removed;
+  }
+
+  private int removeAll() {
+    int removed = root.countAllSubNodes();
+    final Enumeration<MutableTaskNode> children = root.children();
+    while (children.hasMoreElements())
+      root.remove(children.nextElement());
+    return removed;
   }
 }
 
