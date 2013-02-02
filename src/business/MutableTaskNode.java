@@ -25,11 +25,11 @@ public class MutableTaskNode implements MutableTreeNode {
   private boolean isUpperTask;
   private Task task;
   private MutableTreeNode parent;
-  private TwoHalfList<MutableTaskNode> children;
+  private List<MutableTaskNode> children;
   
   public MutableTaskNode(Task task) {
     isUpperTask = false;
-    children = new TwoHalfList<MutableTaskNode>();
+    children = new ArrayList<MutableTaskNode>();
     setUserObject(task);
   }
 
@@ -41,11 +41,11 @@ public class MutableTaskNode implements MutableTreeNode {
 
   public TreeNode getChildAt(int childIndex) {
     checkIndex(childIndex, getChildCount());
-    return children.getFirstElement(childIndex);
+    return children.get(childIndex);
   }
 
   public int getChildCount() {
-    return children.getFirstSize();
+    return children.size();
   }
 
   public TreeNode getParent() {
@@ -54,7 +54,7 @@ public class MutableTaskNode implements MutableTreeNode {
 
   public int getIndex(TreeNode node) {
     if (node instanceof MutableTaskNode)
-      return children.getFirstIndex((MutableTaskNode) node);
+      return children.indexOf(node);
     else return -1;
   }
 
@@ -73,8 +73,8 @@ public class MutableTaskNode implements MutableTreeNode {
    */
   public Enumeration<MutableTaskNode> children() {
     final List<MutableTaskNode> nodes =
-        new ArrayList<MutableTaskNode>(children.getList().size());
-    for (MutableTaskNode child : children.getList())
+        new ArrayList<MutableTaskNode>(children.size());
+    for (MutableTaskNode child : children)
       nodes.add(child);
     return Collections.enumeration(nodes);
   }
@@ -82,31 +82,24 @@ public class MutableTaskNode implements MutableTreeNode {
   public void insert(MutableTreeNode child, int index) {
     if(child instanceof MutableTaskNode) {
       addChild((MutableTaskNode) child, index);
-      if(!isUpperTask)
-        isUpperTask = true;
     }
   }
 
   private void addChild(MutableTaskNode child, int index) {
-    if(child.getChildCount() == 0)
-      children.addToSecond(children.getSecondSize(), child);
-    else {
-      if(index > children.getFirstSize())
-        index = children.getFirstSize();
-      children.addToFirst(index, child);
-    }
+    children.add(index, child);
     child.setParent(this);
+    if(!isUpperTask)
+      isUpperTask = true;
   }
 
   public void remove(int index) {
-    children.removeFromFirst(index);
+    children.remove(index);
     isUpperTask = !(getChildCount() == 0);
   }
 
   public void remove(MutableTreeNode node) {
     if(node instanceof MutableTaskNode) {
-      if(!children.removeFromFirst((MutableTaskNode) node))
-        children.removeFromSecond((MutableTaskNode) node);
+      children.remove(node);
       isUpperTask = !(getChildCount() == 0);
     }
   }
@@ -132,12 +125,8 @@ public class MutableTaskNode implements MutableTreeNode {
     return "MutableTaskNode{" +
         "task=" + task +
         ", parent=" + parent +
-        ", children=" + children.getSize() +
+        ", children=" + children.size() +
         '}';
-  }
-
-  public int getTotalChildCount() {
-    return children.getSize();
   }
 
   public static MutableTaskNode getRootInstance() {
@@ -147,164 +136,17 @@ public class MutableTaskNode implements MutableTreeNode {
   }
 
   public int countAllSubNodes() {
-    int sum = getTotalChildCount();
-    for (MutableTaskNode node : children.getList()) {
-      sum = getTotalChildCount(node, node.getTotalChildCount() + sum);
+    int sum = getChildCount();
+    for (MutableTaskNode node : children) {
+      sum = getTotalChildCount(node, node.getChildCount() + sum);
     }
     return sum;
   }
 
   private int getTotalChildCount(MutableTaskNode subNode, int init) {
-    for (MutableTaskNode node : subNode.children.getList()) {
-      init = getTotalChildCount(node, node.getTotalChildCount() + init);
+    for (MutableTaskNode node : subNode.children) {
+      init = getTotalChildCount(node, node.getChildCount() + init);
     }
     return init;
-  }
-}
-
-class TwoHalfList<T> {
-  private static final String INDEX_ASSERT_MESSAGE = "Index is out of range";
-  private static final String INVARIANT_ASSERT_MESSAGE = "Invariant not satisfied: firstSize + secondSize != list.size()";
-  private String assertMessage;
-  
-  private List<T> list;
-
-  private int firstSize;
-  private int secondSize;
-
-  public TwoHalfList() {
-    list = new ArrayList<T>();
-    firstSize = 0;
-    secondSize = 0;
-    assert invariant() : getAssertMessage();
-  }
-
-  private boolean isIndexValid(int index, int limit) {
-    if(0 <= index && index < limit)
-      return true;
-    else {
-      setAssertMessage(INDEX_ASSERT_MESSAGE);
-      return false;
-    }
-  }
-
-  private boolean invariant() {
-    if(firstSize+secondSize == list.size())
-      return true;
-    else {
-      setAssertMessage(INVARIANT_ASSERT_MESSAGE);
-      return false;
-    }
-  }
-
-  private void setAssertMessage(String message) {
-    assertMessage = message;
-  }
-  
-  private String getAssertMessage() {
-    return assertMessage;
-  }
-  
-  public void addToFirst(int index, T element) {
-    assert invariant() && isIndexValid(index, firstSize+1) : getAssertMessage();
-    list.add(index, element);
-    firstSize++;
-    assert invariant() : getAssertMessage();
-  }
-  
-  public void addToSecond(int index, T element) {
-    assert invariant() && isIndexValid(index, secondSize+1) : getAssertMessage();
-    list.add(firstSize+index, element);
-    secondSize++;
-    assert invariant() : getAssertMessage();
-  }
-  
-  public void removeFromFirst(int index) {
-    assert invariant() && isIndexValid(index, firstSize) : getAssertMessage();
-    if(list.remove(index) != null)
-      firstSize--;
-    assert invariant() : getAssertMessage();
-  }
-  
-  public boolean removeFromFirst(T element) {
-    assert invariant() : getAssertMessage();
-
-    if(isIndexValid(list.indexOf(element), firstSize)) {
-      if(list.remove(element)) {
-        firstSize--;
-        return true;
-      }
-    }
-    assert invariant() : getAssertMessage();
-    return false;
-  }
-
-  @SuppressWarnings("UnusedDeclaration")
-  public void removeFromSecond(int index) {
-    assert invariant() && isIndexValid(index, secondSize) : getAssertMessage();
-    if(list.remove(index+firstSize) != null)
-      secondSize--;
-    assert invariant() : getAssertMessage();
-  }
-
-  @SuppressWarnings("UnusedDeclaration")
-  public boolean removeFromSecond(T element) {
-    assert invariant() : getAssertMessage();
-    boolean removed = false;
-
-    if(isIndexValid(list.indexOf(element)-firstSize, secondSize)) {
-      if(list.remove(element)) {
-        secondSize--;
-        removed = true;
-      }
-    }
-
-    assert invariant() : getAssertMessage();
-    return removed;
-  }
-
-  public T getFirstElement(int index) {
-    assert invariant() && isIndexValid(index, firstSize);
-    return list.get(index);
-  }
-
-  @SuppressWarnings("UnusedDeclaration")
-  public T getSecondElement(int index) {
-    assert invariant() && isIndexValid(index, secondSize);
-    return list.get(index+firstSize);
-  }
-
-  public int getSize() {
-    assert invariant() : getAssertMessage();
-    return firstSize+secondSize;
-  }
-
-  public int getFirstSize() {
-    assert invariant() : getAssertMessage();
-    return firstSize;
-  }
-
-  @SuppressWarnings("UnusedDeclaration")
-  public int getSecondSize() {
-    assert invariant() : getAssertMessage();
-    return secondSize;
-  }
-
-  public int getFirstIndex(T element) {
-    assert invariant() : getAssertMessage();
-    int index = list.indexOf(element);
-    return isIndexValid(index, firstSize) ? index : -1;
-  }
-
-  @SuppressWarnings("UnusedDeclaration")
-  public int getSecondIndex(T element) {
-    assert invariant() : getAssertMessage();
-    int index = list.indexOf(element);
-    return isIndexValid(index-secondSize, secondSize) ? index : -1;
-  }
-
-  public List<T> getList() {
-    assert invariant() : getAssertMessage();
-    return list;
   }
 }

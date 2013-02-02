@@ -1,11 +1,8 @@
 package gui;
 
-import business.Converter;
-import business.MutableTaskNode;
 import business.Task;
 import com.toedter.calendar.JCalendar;
 import com.toedter.calendar.JDateChooser;
-import data.TodoFileIO;
 import dto.DTOTask;
 import dto.TaskProperty;
 import i18n.I18nSupport;
@@ -14,11 +11,8 @@ import resources.ResourceList;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
@@ -28,7 +22,6 @@ import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 
 import static i18n.BundleStrings.*;
@@ -59,8 +52,7 @@ public class TodoFrame extends JFrame {
   private static final int STATUS_BAR_HEIGHT = 20;
 
   private JMenuBar menuBar;
-  private TaskTree taskTree;
-  private TaskNodeTable taskNodeTable;
+  private TaskTreeTable taskTreeTable;
   private TodoStatusBar statusBar;
   private JToolBar toolBar;
 
@@ -181,8 +173,11 @@ public class TodoFrame extends JFrame {
 
   private void initComponents() {
     getContentPane().setLayout(new BorderLayout());
-    getContentPane().add(createSelectorCalendarPanel(), BorderLayout.LINE_START);
-    getContentPane().add(getTableContainer(), BorderLayout.CENTER);
+    createSelectorCalendarPanel();
+//    getContentPane().add(createSelectorCalendarPanel(), BorderLayout.LINE_START);
+    final JScrollPane scrollPane = new JScrollPane(getTableContainer(),
+        JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    getContentPane().add(scrollPane, BorderLayout.CENTER);
     getContentPane().add(getStatusBar(), BorderLayout.PAGE_END);
     getContentPane().add(getToolBar(), BorderLayout.PAGE_START);
 
@@ -193,7 +188,7 @@ public class TodoFrame extends JFrame {
     /* reset frames i18n */
     setTitle(getTitleString());
 
-    taskNodeTable.resetI18n();
+    taskTreeTable.resetI18n();
 
     /* set the locale of the frame and of all components */
     for (Component component : getComponents()) {
@@ -276,7 +271,7 @@ public class TodoFrame extends JFrame {
   }
 
   private void resetSelectorCalendarI18n() {
-    taskTree.resetI18n();
+    taskTreeTable.resetI18n();
     /* reset calendar */
     calendar.setLocale(Locale.getDefault());
   }
@@ -292,9 +287,9 @@ public class TodoFrame extends JFrame {
     /* Provide the change of due date for all selected tasks when the mouse is pressed */
     MouseListener ml = new MouseAdapter() {
       public void mouseClicked(MouseEvent e) {
-        if (!taskTree.getSelectedNodes().isEmpty()) {
-          changeDueDateDialog(calendar.getDate());
-        }
+//        if (!taskTree.getSelectedNodes().isEmpty()) {
+//          changeDueDateDialog(calendar.getDate());
+//        }TODO
       }
     };
      /* Each button of the day panel gets a mouse listener that changes the due dates
@@ -304,64 +299,56 @@ public class TodoFrame extends JFrame {
         c.addMouseListener(ml);
     }
 
-    panel.add(getTaskTree());
     panel.add(calendar);
     return panel;
   }
 
-  private TaskTree getTaskTree() {
-    if(taskTree != null)
-      return taskTree;
+//    taskTree.addTreeSelectionListener(new TreeSelectionListener() {
+//      public void valueChanged(TreeSelectionEvent e) {
+//        final TreePath path = e.getPath();
+//        final Object object = path.getLastPathComponent();
+//        if (e.isAddedPath()) {
+//          if (object instanceof MutableTaskNode) {
+//            final MutableTaskNode node = (MutableTaskNode) object;
+//            statusBar.showTaskInformation(node.getTask());
+//          } else {
+//            statusBar.setText("");
+//            statusBar.showTaskInformation(null);
+//          }
+//        }
+//      }
+//    });TODO zum tasktree hinzufügen
+//    taskTree.addTreeMouseListener(new MouseAdapter() {
+//      public void mouseClicked(MouseEvent e) {
+//        final JTree tree = (JTree) e.getSource();
+//        if (e.getClickCount() == 1) {
+//          final TreePath path = tree.getClosestPathForLocation(e.getX(), e.getY());
+//          if (path != null) {
+//            final Object object = path.getLastPathComponent();
+//            if (object instanceof MutableTaskNode)
+//              taskTreeTable.showNode((MutableTaskNode) object);
+//          }
+//        }
+//      }
+//    });
 
-    taskTree = new TaskTree();
-    taskTree.addTreeSelectionListener(new TreeSelectionListener() {
-      public void valueChanged(TreeSelectionEvent e) {
-        final TreePath path = e.getPath();
-        final Object object = path.getLastPathComponent();
-        if (e.isAddedPath()) {
-          if (object instanceof MutableTaskNode) {
-            final MutableTaskNode node = (MutableTaskNode) object;
-            statusBar.showTaskInformation(node.getTask());
-          } else {
-            statusBar.setText("");
-            statusBar.showTaskInformation(null);
-          }
-        }
-      }
-    });
-    taskTree.addTreeMouseListener(new MouseAdapter() {
+  private TaskTreeTable getTableContainer() {
+    if(taskTreeTable != null)
+      return taskTreeTable;
+    taskTreeTable = new TaskTreeTable();
+    taskTreeTable.setMaximumSize(taskTreeTable.getPreferredSize());
+    taskTreeTable.addTableMouseListener(new MouseAdapter() {
       public void mouseClicked(MouseEvent e) {
-        final JTree tree = (JTree) e.getSource();
-        if (e.getClickCount() == 1) {
-          final TreePath path = tree.getClosestPathForLocation(e.getX(), e.getY());
-          if (path != null) {
-            final Object object = path.getLastPathComponent();
-            if (object instanceof MutableTaskNode)
-              taskNodeTable.showNode((MutableTaskNode) object);
-          }
-        }
+//        taskTree.deselectAllTasks(); //TODO ?
       }
     });
-    return taskTree;
-  }
-
-  private JComponent getTableContainer() {
-    if(taskNodeTable != null)
-      return taskNodeTable;
-    taskNodeTable = new TaskNodeTable();
-    taskNodeTable.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-    taskNodeTable.addTableMouseListener(new MouseAdapter() {
-      public void mouseClicked(MouseEvent e) {
-        taskTree.deselectAllTasks();
-      }
-    });
-    return taskNodeTable;
+    return taskTreeTable;
   }
 
   private void updateGUI() {
-    if(taskTree.hasListChanged())
-      setTitle(getTitleString()+"*");
-    else setTitle(getTitleString());
+//    if(taskTree.hasListChanged())
+//      setTitle(getTitleString()+"*");
+//    else setTitle(getTitleString());TODO hasListChanged
   }
 
   private void changeDueDateDialog(Date newDate) {
@@ -378,10 +365,10 @@ public class TodoFrame extends JFrame {
     if (result == JOptionPane.OK_OPTION) {
       final DTOTask dtoTask = new DTOTask();
       dtoTask.dueDate = newDate.getTime();
-      taskTree.changeSelectedNodes(dtoTask);
-      taskNodeTable.updateTable();
-    } else if(result == JOptionPane.NO_OPTION)
-      taskTree.deselectAllTasks();
+//      taskTree.changeSelectedNodes(dtoTask); TODO selection
+      taskTreeTable.updateTable();
+    } else if(result == JOptionPane.NO_OPTION)               ;
+//      taskTree.deselectAllTasks();
   }
 
   /* Getter and Setter */
@@ -425,7 +412,7 @@ public class TodoFrame extends JFrame {
   }
 
   private boolean hasChanged() {
-    return taskTree.hasListChanged();
+    return true;//taskTree.hasListChanged();
   }
 
   /* Inner Classes */
@@ -506,36 +493,36 @@ public class TodoFrame extends JFrame {
     }
 
     private void writeListToFile(File file) throws IOException {
-      final List<DTOTask> tasks = Converter.toDTOList(taskTree.getTaskRoot());
-      TodoFileIO.writeTodoFile(tasks, file);
-      setCurrentFile(file);
-      taskTree.setListChanged(false);
-      statusBar.setText(I18nSupport.getValue(MESSAGES, "saved.file.0",
-          file.getAbsolutePath()));
+//      final List<DTOTask> tasks = Converter.toDTOList(taskTree.getTaskRoot());
+//      TodoFileIO.writeTodoFile(tasks, file);
+//      setCurrentFile(file);
+//      taskTree.setListChanged(false);
+//      statusBar.setText(I18nSupport.getValue(MESSAGES, "saved.file.0",
+//          file.getAbsolutePath())); TODO
     }
 
     private void openFile() {
-      final File selectedFile = GUIUtilities.getOpenFile(currentFile, frame);
-      if(selectedFile != null) {
-        try {
-          final List<DTOTask> dtoTasks = TodoFileIO.readTodoFile(selectedFile);
-          final MutableTaskNode root = Converter.fromDTOList(dtoTasks);
-          taskTree.setRoot(root);
-          taskNodeTable.showNode(root);
-          frame.setCurrentFile(selectedFile);
-          taskTree.setListChanged(false);
-          statusBar.setText(I18nSupport.getValue(MESSAGES, "opened.file.0",
-              selectedFile.getAbsolutePath()));
-        } catch (IOException e) {
-          JOptionPane.showMessageDialog(frame,
-              I18nSupport.getValue(MESSAGES, "could.not.load.list"), "",
-              JOptionPane.ERROR_MESSAGE);
-        } catch (Exception e) {
-          JOptionPane.showMessageDialog(frame,
-              I18nSupport.getValue(MESSAGES, "wrong.file.format"), "",
-              JOptionPane.ERROR_MESSAGE);
-        }
-      }
+//      final File selectedFile = GUIUtilities.getOpenFile(currentFile, frame);
+//      if(selectedFile != null) {
+//        try {
+//          final List<DTOTask> dtoTasks = TodoFileIO.readTodoFile(selectedFile);
+//          final MutableTaskNode root = Converter.fromDTOList(dtoTasks);
+//          taskTree.setRoot(root);
+//          taskTreeTable.showNode(root);
+//          frame.setCurrentFile(selectedFile);
+//          taskTree.setListChanged(false);
+//          statusBar.setText(I18nSupport.getValue(MESSAGES, "opened.file.0",
+//              selectedFile.getAbsolutePath()));
+//        } catch (IOException e) {
+//          JOptionPane.showMessageDialog(frame,
+//              I18nSupport.getValue(MESSAGES, "could.not.load.list"), "",
+//              JOptionPane.ERROR_MESSAGE);
+//        } catch (Exception e) {
+//          JOptionPane.showMessageDialog(frame,
+//              I18nSupport.getValue(MESSAGES, "wrong.file.format"), "",
+//              JOptionPane.ERROR_MESSAGE);
+//        }
+//   - }TODO
     }
   }
 
@@ -573,58 +560,58 @@ public class TodoFrame extends JFrame {
     }
 
     private void editTask() {
-      final List<MutableTaskNode> tasks = taskTree.getSelectedNodes();
-      String text = "";
-      if(tasks.size() > 1) {
-        String[] strings = {I18nSupport.getValue(COMPONENTS, "text.yes.edit.all"),
-            I18nSupport.getValue(COMPONENTS, "text.only.the.first"),
-            I18nSupport.getValue(COMPONENTS, "text.cancel"),
-            I18nSupport.getValue(COMPONENTS, "text.not.sure")};
-        int result = GUIUtilities.showConfirmDialog(frame, strings,
-            I18nSupport.getValue(MESSAGES, "edit.all.selected.tasks.question"),
-            I18nSupport.getValue(TITLES, "edit.tasks"),
-            JOptionPane.QUESTION_MESSAGE, 4);
-        if(result == 1) {
-          //TODO Alles editieren
-          text = I18nSupport.getValue(MESSAGES, "changed.task");
-        } else if(result == 2) {
-          //TODO nur das erste editieren
-          text = I18nSupport.getValue(MESSAGES, "changed.task");
-        } else if(result == 3) {
-          taskTree.deselectAllTasks();
-        }
-      }
-      statusBar.setText(text);
+//      final List<MutableTaskNode> tasks = taskTree.getSelectedNodes();
+//      String text = "";
+//      if(tasks.size() > 1) {
+//        String[] strings = {I18nSupport.getValue(COMPONENTS, "text.yes.edit.all"),
+//            I18nSupport.getValue(COMPONENTS, "text.only.the.first"),
+//            I18nSupport.getValue(COMPONENTS, "text.cancel"),
+//            I18nSupport.getValue(COMPONENTS, "text.not.sure")};
+//        int result = GUIUtilities.showConfirmDialog(frame, strings,
+//            I18nSupport.getValue(MESSAGES, "edit.all.selected.tasks.question"),
+//            I18nSupport.getValue(TITLES, "edit.tasks"),
+//            JOptionPane.QUESTION_MESSAGE, 4);
+//        if(result == 1) {
+//          //TODO Alles editieren
+//          text = I18nSupport.getValue(MESSAGES, "changed.task");
+//        } else if(result == 2) {
+//          //TODO nur das erste editieren
+//          text = I18nSupport.getValue(MESSAGES, "changed.task");
+//        } else if(result == 3) {
+//          taskTree.deselectAllTasks();
+//        }
+//      }
+//      statusBar.setText(text); TODO
     }
 
-    private void addTask() {
-      final MutableTaskNode node = taskTree.addTask(true);
-      taskNodeTable.showNode(node);
-      statusBar.setText(I18nSupport.getValue(MESSAGES, "added.task"));
-      statusBar.showTaskInformation(node.getTask());
+    private void addTask() {  //TODO add Task
+//      final MutableTaskNode node = taskTree.addTask(true);
+//      taskTreeTable.showNode(node);
+//      statusBar.setText(I18nSupport.getValue(MESSAGES, "added.task"));
+//      statusBar.showTaskInformation(node.getTask());
     }
 
     private void removeTasks() {
-      final List<MutableTaskNode> tasks = taskTree.getSelectedNodes();
-      String text = "";
-      if(tasks.size() > 0) {
-        String[] strings = {I18nSupport.getValue(COMPONENTS, "text.remove"),
-          I18nSupport.getValue(COMPONENTS, "text.reset.selections"),
-          I18nSupport.getValue(COMPONENTS, "text.not.sure")};
-        int result = GUIUtilities.showConfirmDialog(frame, strings,
-          I18nSupport.getValue(MESSAGES, "remove.selected.tasks.question"),
-          I18nSupport.getValue(TITLES, "remove.tasks"),
-          JOptionPane.QUESTION_MESSAGE, 2);
-        if(result == JOptionPane.YES_OPTION) {
-          int deleted = taskTree.removeSelectedTasks();
-          if(deleted != 0) {
-            taskNodeTable.showNode(null);
-            text = I18nSupport.getValue(MESSAGES, "removed.tasks.0",deleted);
-          }
-        } else if(result == JOptionPane.NO_OPTION)
-          taskTree.deselectAllTasks();
-        statusBar.setText(text);
-      }
+//      final List<MutableTaskNode> tasks = taskTree.getSelectedNodes();
+//      String text = "";
+//      if(tasks.size() > 0) {
+//        String[] strings = {I18nSupport.getValue(COMPONENTS, "text.remove"),
+//          I18nSupport.getValue(COMPONENTS, "text.reset.selections"),
+//          I18nSupport.getValue(COMPONENTS, "text.not.sure")};
+//        int result = GUIUtilities.showConfirmDialog(frame, strings,
+//          I18nSupport.getValue(MESSAGES, "remove.selected.tasks.question"),
+//          I18nSupport.getValue(TITLES, "remove.tasks"),
+//          JOptionPane.QUESTION_MESSAGE, 2);
+//        if(result == JOptionPane.YES_OPTION) {
+//          int deleted = taskTree.removeSelectedTasks();
+//          if(deleted != 0) {
+//            taskTreeTable.showNode(null);
+//            text = I18nSupport.getValue(MESSAGES, "removed.tasks.0",deleted);
+//          }
+//        } else if(result == JOptionPane.NO_OPTION)
+//          taskTree.deselectAllTasks();
+//        statusBar.setText(text);
+//      }
     }
   }
 }
@@ -877,7 +864,7 @@ class TaskEditorPanel extends JPanel {
     attributionLabel.setMaximumSize(new Dimension(dim.width + 5, dim.height));
     attrComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE,
         attrComboBox.getPreferredSize().height));
-    attrComboBox.setRenderer(new gui.TaskEditorPanel.EditorComboBoxRenderer());
+    attrComboBox.setRenderer(new AttributionPriorityRenderer());
 
     add(attributionLabel, GUIUtilities.createConstraints(0, row));
     add(attrComboBox, GUIUtilities.createConstraints(1, row, 2, 1,
@@ -897,7 +884,7 @@ class TaskEditorPanel extends JPanel {
     priorityLabel.setMaximumSize(new Dimension(dim.width + 5, dim.height));
     priorityComboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE,
         priorityComboBox.getPreferredSize().height));
-    priorityComboBox.setRenderer(new EditorComboBoxRenderer());
+    priorityComboBox.setRenderer(new AttributionPriorityRenderer());
 
     add(priorityLabel, GUIUtilities.createConstraints(0, row));
     add(priorityComboBox, GUIUtilities.createConstraints(1, row, 2, 1,
@@ -1033,29 +1020,6 @@ class TaskEditorPanel extends JPanel {
           thisPanel = thisPanel.getParent();
 //        TodoFrame.getTodoFrame().closeTask((TaskEditorPanel) thisPanel, getUnchangedTask());
       }
-    }
-  }
-
-  /* Renders the combo box items for priority and attribution */
-  private class EditorComboBoxRenderer extends DefaultListCellRenderer {
-    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-      Component comp = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-      final JLabel label = new JLabel();
-      if(value instanceof TaskProperty.Attribution) {
-        final TaskProperty.Attribution attribution = (TaskProperty.Attribution) value;
-        label.setText(attribution.getDescription());
-        label.setIcon(attribution.getIcon(this.getPreferredSize().height));
-      } else if(value instanceof TaskProperty.Priority) {
-        final TaskProperty.Priority priority = (TaskProperty.Priority) value;
-        label.setText(priority.getDescription());
-        label.setIcon(priority.getIcon(this.getPreferredSize().height));
-      } else label.setText(value.toString());
-
-      label.setOpaque(true);
-      label.setForeground(comp.getForeground());
-      label.setBackground(comp.getBackground());
-
-      return label;
     }
   }
 }
