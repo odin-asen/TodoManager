@@ -6,6 +6,8 @@ import gui.treeTable.AbstractTreeTableModel;
 import gui.treeTable.TreeTableModel;
 import i18n.I18nSupport;
 
+import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -48,12 +50,24 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
       throw new ArrayIndexOutOfBoundsException("The parameter is not >= 0 and not < "+compareTo);
   }
 
+  public void resetI18n() {
+    initColumnNames();
+  }
+
   public Object getChild(Object parent, int index) {
     return ((MutableTaskNode) parent).getChildAt(index);
   }
 
   public int getChildCount(Object parent) {
-    return ((MutableTaskNode) parent).getChildCount();
+    if(parent instanceof MutableTaskNode)
+      return ((MutableTaskNode) parent).getChildCount();
+    else return -1;
+  }
+
+  public int getIndexOfChild(Object parent, Object child) {
+    if(parent instanceof TreeNode && child instanceof TreeNode)
+      return ((TreeNode) parent).getIndex((TreeNode) child);
+    else return -1;
   }
 
   public int getColumnCount() {
@@ -92,7 +106,9 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
   public void setValueAt(Object value, Object node, int columnIndex) {
     checkIndex(columnIndex, columnNames.size());
     try {
-      SETTER.get(columnIndex).invoke(((MutableTaskNode) node).getTask(), value);
+      final Class parameterClass = GETTER.get(columnIndex).getReturnType();
+      if(value != null && value.getClass().equals(parameterClass))
+        SETTER.get(columnIndex).invoke(((MutableTaskNode) node).getTask(), value);
     } catch (IllegalAccessException e) {
       LOGGER.severe("Illegal access on a task: " + e.getMessage());
     } catch (InvocationTargetException e) {
@@ -106,12 +122,8 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
     final MutableTaskNode parentNode = (MutableTaskNode) parent.getLastPathComponent();
     int index = getChildCount(parentNode);
     parentNode.insert(child, index);
-    if(parentNode.getAllowsChildren()) {
-      fireTreeNodesInserted(this, new Object[]{parent}, new int[]{index},
-          new Object[]{child});
-    } else {
-      fireTreeNodesChanged(this, new Object[]{parent}, null, null);
-    }
+    fireTreeNodesInserted(this, new Object[]{parent}, new int[]{index},
+        new Object[]{child});
   }
 
   public int remove(TreePath path) {
@@ -119,26 +131,33 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
 
     if(path == null || root.equals(path.getLastPathComponent())) {
       removed = removeAll();
-      fireTreeNodesChanged(this, new Object[]{new TreePath(root)}, null, null);
     } else {
       final MutableTaskNode node = (MutableTaskNode) path.getLastPathComponent();
       int index = getIndexOfChild(node.getParent(), node);
-      removed = node.countAllSubNodes();
-
-      node.remove(index);
-      fireTreeNodesRemoved(this, new Object[]{path.getParentPath()}, new int[]{index-1},
-          new Object[]{node});
+      removed = node.countAllSubNodes()+1;
+      if(index != -1) {
+        ((MutableTaskNode) node.getParent()).remove(index);
+        fireTreeNodesRemoved(this, new Object[]{path.getParentPath()}, new int[]{index},
+            new Object[]{node});
+      }
     }
-
     return removed;
   }
 
   private int removeAll() {
-    MutableTaskNode taskRoot = ((MutableTaskNode) getRoot());
+    final MutableTaskNode taskRoot = ((MutableTaskNode) getRoot());
     int removed = taskRoot.countAllSubNodes();
+    final TreePath rootPath = new TreePath(root);
+    int[] indices = new int[removed];
+    Object[] nodes = new Object[removed];
+
     final Enumeration<MutableTaskNode> children = taskRoot.children();
-    while (children.hasMoreElements())
-      taskRoot.remove(children.nextElement());
+    for (int index = 0; children.hasMoreElements(); index++) {
+      indices[index] = index;
+      nodes[index] = children.nextElement();
+      taskRoot.remove((MutableTreeNode) nodes[index]);
+    }
+    fireTreeNodesRemoved(this, new Object[]{rootPath}, indices, nodes);
     return removed;
   }
 }

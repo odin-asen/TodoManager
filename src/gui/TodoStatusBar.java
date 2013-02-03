@@ -1,7 +1,5 @@
 package gui;
 
-import business.Task;
-import dto.TaskProperty;
 import i18n.I18nSupport;
 
 import javax.swing.*;
@@ -14,7 +12,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 
-import static i18n.BundleStrings.*;
+import static i18n.BundleStrings.MISC;
 
 /**
  * User: Timm Herrmann
@@ -22,8 +20,6 @@ import static i18n.BundleStrings.*;
  * Time: 19:37
  */
 public class TodoStatusBar extends JPanel implements Runnable {
-  private static final Dimension MINIMUM_DIMENSION = new Dimension(16,16);
-
   private static final Border LOWERED_BORDER = BorderFactory.createBevelBorder(BevelBorder.LOWERED);
 
   private static DateFormat format;
@@ -31,8 +27,6 @@ public class TodoStatusBar extends JPanel implements Runnable {
 
   private JPanel besideLabelPanel;
   private JLabel mainStatusLabel;
-  private JLabel attributionLabel;
-  private JLabel taskLabel;
   private JLabel clockLabel;
   private Boolean running;
 
@@ -49,7 +43,6 @@ public class TodoStatusBar extends JPanel implements Runnable {
     resetI18n();
 
     /* init labels */
-    showTaskInformation(null);
 
     new Thread(this).start();
   }
@@ -61,12 +54,8 @@ public class TodoStatusBar extends JPanel implements Runnable {
 
     besideLabelPanel = new JPanel();
     clockLabel = new JLabel();
-    attributionLabel = new JLabel();
-    taskLabel = new JLabel();
 
     besideLabelPanel.setLayout(new BoxLayout(besideLabelPanel, BoxLayout.LINE_AXIS));
-    addStatusLabel(besideLabelPanel, taskLabel);
-    addStatusLabel(besideLabelPanel, attributionLabel);
     addStatusLabel(besideLabelPanel, clockLabel);
 
     return besideLabelPanel;
@@ -76,44 +65,6 @@ public class TodoStatusBar extends JPanel implements Runnable {
     label.setBorder(LOWERED_BORDER);
     label.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
     panel.add(label);
-  }
-
-  /**
-   * Displays the task's information in the status bar.
-   * The display can be removed by calling the method with
-   * null as parameter
-   * @param task Task whose information will be displayed.
-   */
-  public void showTaskInformation(Task task) {
-    if(task == null)
-      setTaskInformation(null, null, null, null);
-    else {
-      final DateFormat format = new SimpleDateFormat(I18nSupport.getValue(
-          MISC, "format.due.date"), Locale.getDefault());
-      final Calendar calendar = Calendar.getInstance();
-      calendar.setTimeInMillis(task.getDueDate());
-      setTaskInformation(task.getAttribution(),
-          format.format(calendar.getTime()), task.getName(),
-          I18nSupport.getValue(COMPONENTS, "tooltip.category.0", task.getName()));
-      setText(I18nSupport.getValue(MESSAGES, "selected.task"));
-    }
-  }
-
-  private void setTaskInformation(TaskProperty.Attribution attribution,
-                                  String time, String taskText,
-                                  String taskToolTip) {
-    attributionLabel.setText(time);
-    attributionLabel.setToolTipText(attribution != null ? attribution.getDescription() : null);
-    attributionLabel.setIcon(attribution != null
-        ? attribution.getIcon(attributionLabel.getSize().height) : null);
-    attributionLabel.setPreferredSize(time == null || time.isEmpty()
-        ? MINIMUM_DIMENSION : null);
-
-    taskLabel.setText(taskText);
-    taskLabel.setToolTipText(taskToolTip);
-    taskLabel.setPreferredSize(taskText == null || taskText.isEmpty()
-        ? MINIMUM_DIMENSION : null);
-
   }
 
   public void setText(String text) {
@@ -144,6 +95,5 @@ public class TodoStatusBar extends JPanel implements Runnable {
     format = new SimpleDateFormat(I18nSupport.getValue(MISC, "format.date"),
         Locale.getDefault());
     format.setCalendar(calendar);
-    setTaskInformation(null,"","","");
   }
 }

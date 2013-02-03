@@ -3,7 +3,9 @@ package gui.treeTable;
 import javax.swing.event.EventListenerList;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import java.util.Enumeration;
 
 /**
  * User: Timm Herrmann
@@ -34,13 +36,6 @@ public abstract class AbstractTreeTableModel implements TreeTableModel {
   public void valueForPathChanged(TreePath path, Object newValue) {
   }
 
-  /**
-   * Die Methode wird normalerweise nicht aufgerufen.
-   */
-  public int getIndexOfChild(Object parent, Object child) {
-    return 0;
-  }
-
   public void addTreeModelListener(TreeModelListener l) {
     listenerList.add(TreeModelListener.class, l);
   }
@@ -51,10 +46,9 @@ public abstract class AbstractTreeTableModel implements TreeTableModel {
 
   private void fireTreeNode(int changeType, Object source, Object[] path, int[] childIndices, Object[] children) {
     Object[] listeners = listenerList.getListenerList();
-    TreeModelEvent e = new TreeModelEvent(source, path, childIndices, children);
+    final TreeModelEvent e = new TreeModelEvent(source, path, childIndices, children);
     for (int i = listeners.length - 2; i >= 0; i -= 2) {
       if (listeners[i] == TreeModelListener.class) {
-
         switch (changeType) {
           case CHANGED:
             ((TreeModelListener) listeners[i + 1]).treeNodesChanged(e);
@@ -76,6 +70,7 @@ public abstract class AbstractTreeTableModel implements TreeTableModel {
     }
   }
 
+  @SuppressWarnings("UnusedDeclaration")
   protected void fireTreeNodesChanged(Object source, Object[] path, int[] childIndices, Object[] children) {
     fireTreeNode(CHANGED, source, path, childIndices, children);
   }
@@ -88,7 +83,32 @@ public abstract class AbstractTreeTableModel implements TreeTableModel {
     fireTreeNode(REMOVED, source, path, childIndices, children);
   }
 
+  @SuppressWarnings("UnusedDeclaration")
   protected void fireTreeStructureChanged(Object source, Object[] path, int[] childIndices, Object[] children) {
     fireTreeNode(STRUCTURE_CHANGED, source, path, childIndices, children);
+  }
+
+  /**
+   * Returns the number of all children in the tree.
+   * @return An integer of the number of the root's children.
+   */
+  @SuppressWarnings("UnusedDeclaration")
+  public int getTotalChildCount() {
+    int sum = getChildCount(root);
+    if(root instanceof TreeNode)
+      sum = getTotalChildCount((TreeNode) root, sum);
+    return sum;
+  }
+
+  private int getTotalChildCount(TreeNode subNode, int init) {
+    final Enumeration children = subNode.children();
+    while (children.hasMoreElements()) {
+      final Object child = children.nextElement();
+      if(child instanceof TreeNode) {
+        final TreeNode childNode = (TreeNode) child;
+        init = getTotalChildCount(childNode, childNode.getChildCount() + init);
+      } else init = init + getChildCount(child);
+    }
+    return init;
   }
 }

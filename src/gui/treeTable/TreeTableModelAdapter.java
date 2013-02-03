@@ -12,8 +12,8 @@ import javax.swing.tree.TreePath;
  * Time: 17:40
  */
 public class TreeTableModelAdapter extends AbstractTableModel {
-  JTree tree;
-  AbstractTreeTableModel treeTableModel;
+  protected JTree tree;
+  protected AbstractTreeTableModel treeTableModel;
 
   public TreeTableModelAdapter(AbstractTreeTableModel treeTableModel, JTree tree) {
     this.tree = tree;
