@@ -16,9 +16,9 @@ import static i18n.BundleStrings.MISC;
 public interface TaskProperty {
   public enum Attribution {
     NOTHING(null),
-    BIRTHDAY(ResourceGetter.getImage(ResourceList.IMAGE_ATTRIBUTION_BIRTHDAY,"")),
-    FREE_TIME(ResourceGetter.getImage(ResourceList.IMAGE_ATTRIBUTION_FREE_TIME,"")),
-    WORK(ResourceGetter.getImage(ResourceList.IMAGE_ATTRIBUTION_WORK,""));
+    BIRTHDAY(ResourceGetter.getImage(ResourceList.IMAGE_ATTRIBUTION_BIRTHDAY)),
+    FREE_TIME(ResourceGetter.getImage(ResourceList.IMAGE_ATTRIBUTION_FREE_TIME)),
+    WORK(ResourceGetter.getImage(ResourceList.IMAGE_ATTRIBUTION_WORK));
 
     private ImageIcon icon;
 
@@ -46,11 +46,11 @@ public interface TaskProperty {
   }
 
   public enum Priority {
-    LOWEST(ResourceGetter.getImage(ResourceList.IMAGE_PRIORITY_LOWEST,"")),
-    LOW(ResourceGetter.getImage(ResourceList.IMAGE_PRIORITY_LOW,"")),
-    MEDIUM(ResourceGetter.getImage(ResourceList.IMAGE_PRIORITY_MEDIUM,"")),
-    HIGH(ResourceGetter.getImage(ResourceList.IMAGE_PRIORITY_HIGH,"")),
-    HIGHEST(ResourceGetter.getImage(ResourceList.IMAGE_PRIORITY_HIGHEST,""));
+    LOWEST(ResourceGetter.getImage(ResourceList.IMAGE_PRIORITY_LOWEST)),
+    LOW(ResourceGetter.getImage(ResourceList.IMAGE_PRIORITY_LOW)),
+    MEDIUM(ResourceGetter.getImage(ResourceList.IMAGE_PRIORITY_MEDIUM)),
+    HIGH(ResourceGetter.getImage(ResourceList.IMAGE_PRIORITY_HIGH)),
+    HIGHEST(ResourceGetter.getImage(ResourceList.IMAGE_PRIORITY_HIGHEST));
 
     private ImageIcon icon;
 

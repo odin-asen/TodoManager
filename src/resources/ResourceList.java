@@ -28,4 +28,6 @@ public interface ResourceList {
   String IMAGE_CLOSE_ROLLOVER = PICTURES_ROOT + "close_dark.png";
   String IMAGE_OPEN_FILE = PICTURES_ROOT + "open_folder.png";
   String IMAGE_SAVE_FILE = PICTURES_ROOT + "flash_drive.png";
+  String IMAGE_UPPER_TASK = PICTURES_ROOT + "todo_list_table.png";
+  String IMAGE_SINGLE_TASK = PICTURES_ROOT + "tick.png";
 }

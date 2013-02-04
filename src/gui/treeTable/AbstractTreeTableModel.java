@@ -111,4 +111,6 @@ public abstract class AbstractTreeTableModel implements TreeTableModel {
     }
     return init;
   }
+
+  public abstract int getTreeColumn();
 }

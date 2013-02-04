@@ -29,6 +29,8 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
   private static final List<Method> SETTER = ReflectionUtility.getSortedSetters(Task.class);
   private static final Logger LOGGER =
       LoggingUtility.getLogger(TaskTreeTableModel.class.getName());
+  private static final String I18N_SUFFIX_TREE = "tree.header"; //NON-NLS
+  private static final int TREE_COLUMN = 0;
 
   private List<String> columnNames;
 
@@ -40,13 +42,14 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
 
   private void initColumnNames() {
     List<Field> getterSetterFields = ReflectionUtility.getterSetterFields(Task.class);
-    columnNames = new ArrayList<String>(getterSetterFields.size());
+    columnNames = new ArrayList<String>(getterSetterFields.size()+1);
+    columnNames.add(I18N_SUFFIX_TREE);
     for (Field field : getterSetterFields)
       columnNames.add(field.getName());
   }
 
   private void checkIndex(int index, int compareTo) {
-    if(!(index >= 0 && index < compareTo))
+    if(!(index >= TREE_COLUMN && index < compareTo))
       throw new ArrayIndexOutOfBoundsException("The parameter is not >= 0 and not < "+compareTo);
   }
 
@@ -80,17 +83,26 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
   }
 
   public Class<?> getColumnClass(int columnIndex) {
-    if(columnIndex == 0)
+    if(columnIndex == TREE_COLUMN)
       return TreeTableModel.class;
 
-    checkIndex(columnIndex, columnNames.size());
-    return GETTER.get(columnIndex).getReturnType();
+    final int index = columnIndex-1;
+    checkIndex(index, GETTER.size());
+    return GETTER.get(index).getReturnType();
+  }
+
+  public int getTreeColumn() {
+    return TREE_COLUMN;
   }
 
   public Object getValueAt(Object node, int columnIndex) {
-    checkIndex(columnIndex, columnNames.size());
+    if(columnIndex == TREE_COLUMN)
+      return null;
+
+    int index = columnIndex-1;
+    checkIndex(index, GETTER.size());
     try {
-      return GETTER.get(columnIndex).invoke(((MutableTaskNode) node).getTask());
+      return GETTER.get(index).invoke(((MutableTaskNode) node).getTask());
     } catch (IllegalAccessException e) {
       LOGGER.severe("Illegal access on a task: " + e.getMessage());
     } catch (InvocationTargetException e) {
@@ -104,11 +116,15 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
   }
 
   public void setValueAt(Object value, Object node, int columnIndex) {
-    checkIndex(columnIndex, columnNames.size());
+    if(columnIndex == TREE_COLUMN)
+      return;
+
+    int index = columnIndex-1;
+    checkIndex(index, SETTER.size());
     try {
-      final Class parameterClass = GETTER.get(columnIndex).getReturnType();
-      if(value != null && value.getClass().equals(parameterClass))
-        SETTER.get(columnIndex).invoke(((MutableTaskNode) node).getTask(), value);
+      final Method setter = SETTER.get(index);
+      if(value != null && value.getClass().equals(setter.getParameterTypes()[0]))
+        setter.invoke(((MutableTaskNode) node).getTask(), value);
     } catch (IllegalAccessException e) {
       LOGGER.severe("Illegal access on a task: " + e.getMessage());
     } catch (InvocationTargetException e) {

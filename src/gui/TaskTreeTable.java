@@ -9,12 +9,15 @@ import dto.TaskProperty;
 import gui.treeTable.TreeTableModel;
 import gui.treeTable.TreeTableModelAdapter;
 import i18n.I18nSupport;
+import resources.ResourceGetter;
+import resources.ResourceList;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreeModel;
@@ -46,6 +49,7 @@ public class TaskTreeTable extends JTable {
   private TaskTreeTableModel treeTableModel;
   private boolean listChanged;
   private TreeTableModelAdapter treeTableModelAdapter;
+  private TaskTableCellRenderer tableCellRenderer;
 
   /* Constructors */
 
@@ -56,22 +60,29 @@ public class TaskTreeTable extends JTable {
     getTreeRenderer();
     setRoot(MutableTaskNode.getRootInstance());
 
-    /* Simultaneous selection for the tree and the table */
+    /* simultaneous selection for the tree and the table */
     TreeTableSelectionModel selectionModel = new TreeTableSelectionModel();
     treeRenderer.setSelectionModel(selectionModel); //For the tree
     setSelectionModel(selectionModel.getListSelectionModel()); //For the table
 
-    /* Set renderer and editors */
+    /* set renderer and editor for the tree */
     setDefaultRenderer(TreeTableModel.class, treeRenderer);
-    setDefaultRenderer(Long.class, treeRenderer);
-    setDefaultRenderer(Attribution.class, treeRenderer);
-    setDefaultRenderer(Priority.class, treeRenderer);
-
     setDefaultEditor(TreeTableModel.class, new TaskTreeTableCellEditor(treeRenderer, this));
+
+    /* set remaining renderer and editors */
+    tableCellRenderer = new TaskTableCellRenderer();
+    setDefaultRenderer(Long.class, tableCellRenderer);
+    setDefaultRenderer(Attribution.class, tableCellRenderer);
+    setDefaultRenderer(Priority.class, tableCellRenderer);
+
     final TaskCellEditor editor = new TaskCellEditor();
     setDefaultEditor(Priority.class, editor);
     setDefaultEditor(Attribution.class, editor);
     setDefaultEditor(Long.class, editor);
+
+    /* header moving is not allowed (makes less problems) */
+    getTableHeader().setReorderingAllowed(false);
+    getTableHeader().setResizingAllowed(false);
 
     /* set a default row height that fits for the date chooser and pictures */
     setRowHeight(DEFAULT_ROW_HEIGHT);
@@ -80,9 +91,28 @@ public class TaskTreeTable extends JTable {
 
   /* Methods */
 
+  public void doLayout() {
+    getColumn(treeTableModel.getColumnName(treeTableModel.getTreeColumn())).setWidth(
+        treeRenderer.getPreferredSize().width);
+    for (int index = 0; index < getColumnCount()-1; index++) {
+      if(index != treeTableModel.getTreeColumn()) {
+        final TableColumn column = getColumn(treeTableModel.getColumnName(index));
+        final Component component = getCellRenderer(0, index).getTableCellRendererComponent(
+            this, getValueAt(0, index), false, false, 0, index);
+        final int componentWidth = component.getPreferredSize().width +5;
+        final int columnWidth = column.getPreferredWidth();
+        column.setWidth(componentWidth > columnWidth ? componentWidth : columnWidth);
+      }
+    }
+    final TableColumn lastColumn = getColumn(getColumnName(getColumnCount()-1));
+    int remainingSpace = getWidth() -
+        (getColumnModel().getTotalColumnWidth() - lastColumn.getWidth());
+    lastColumn.setWidth(remainingSpace);
+  }
+
   public void resetI18n() {
     treeTableModel.resetI18n();
-    treeRenderer.resetI18n();
+    tableCellRenderer.resetI18n();
     treeTableModelAdapter.fireTableCellUpdated(TableModelEvent.HEADER_ROW,
         TableModelEvent.ALL_COLUMNS);
   }
@@ -196,57 +226,26 @@ class TaskTreeTableCellRenderer extends JTree implements TableCellRenderer {
   protected int rowToPaint;
 
   private TaskTreeTable treeTable;
-  private DateFormat dateFormat;
-  private JLabel label;
 
   public TaskTreeTableCellRenderer(TaskTreeTable treeTable, TreeModel model) {
     super(model);
     this.treeTable = treeTable;
-    label = new JLabel();
-    label.setOpaque(true);
     setCellRenderer(new TaskTreeCellRenderer());
     /* Set the row height for the JTable */
     /* Must be called because treeTable is still null */
     /* when super(model) calls setRowHeight! */
     setRowHeight(getRowHeight());
-    resetI18n();
-  }
-
-  public void resetI18n() {
-    dateFormat = new SimpleDateFormat(
-        I18nSupport.getValue(MISC, "format.due.date"), Locale.getDefault());
   }
 
   public Component getTableCellRendererComponent(JTable table, Object value,
                                                  boolean isSelected, boolean hasFocus,
                                                  int row, int column) {
     if(isSelected) {
-      label.setBackground(table.getSelectionBackground());
-      label.setForeground(table.getSelectionForeground());
       setBackground(table.getSelectionBackground());
     } else {
-      label.setBackground(table.getBackground());
-      label.setForeground(table.getForeground());
       setBackground(table.getBackground());
     }
-    String text = null;
-    Icon icon = null;
-    if(value instanceof Long) {
-      text = dateFormat.format(new Date((Long) value));
-    } else if(value instanceof Attribution) {
-      text = ((Attribution) value).getDescription();
-      icon = ((Attribution) value).getIcon(getRowHeight());
-    } else if(value instanceof Priority) {
-      text = ((Priority) value).getDescription();
-      icon = ((Priority) value).getIcon(getRowHeight());
-    }
     rowToPaint = row;
-
-    if(text != null) {
-      label.setText(text);
-      label.setIcon(icon);
-      return label;
-    }
     return this;
   }
 
@@ -275,7 +274,46 @@ class TaskTreeTableCellRenderer extends JTree implements TableCellRenderer {
   }
 }
 
+class TaskTableCellRenderer extends JLabel implements TableCellRenderer {
+  private DateFormat dateFormat;
+
+  public TaskTableCellRenderer() {
+    setOpaque(true);
+    resetI18n();
+  }
+
+  public void resetI18n() {
+    dateFormat = new SimpleDateFormat(
+        I18nSupport.getValue(MISC, "format.due.date"), Locale.getDefault());
+  }
+
+  public Component getTableCellRendererComponent(JTable table, Object value,
+                                                 boolean isSelected, boolean hasFocus,
+                                                 int row, int column) {
+    if(isSelected) {
+      setBackground(table.getSelectionBackground());
+      setForeground(table.getSelectionForeground());
+    } else {
+      setBackground(table.getBackground());
+      setForeground(table.getForeground());
+    }
+    if(value instanceof Long) {
+      setText(dateFormat.format(new Date((Long) value)));
+      setIcon(null);
+    } else if(value instanceof Attribution) {
+      setText(((Attribution) value).getDescription());
+      setIcon(((Attribution) value).getIcon(table.getRowHeight()));
+    } else if(value instanceof Priority) {
+      setText(((Priority) value).getDescription());
+      setIcon(((Priority) value).getIcon(table.getRowHeight()));
+    }
+    return this;
+  }
+}
+
 class TaskTreeCellRenderer extends DefaultTreeCellRenderer {
+  final Icon upperTaskIcon = ResourceGetter.getImage(ResourceList.IMAGE_UPPER_TASK);
+  final Icon defaultTaskIcon = ResourceGetter.getImage(ResourceList.IMAGE_SINGLE_TASK);
   public TaskTreeCellRenderer() {
     setOpaque(false);
   }
@@ -284,48 +322,18 @@ class TaskTreeCellRenderer extends DefaultTreeCellRenderer {
       JTree tree, Object value, boolean selected, boolean expanded,
       boolean leaf, int row, boolean hasFocus) {
     super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
-    Color foreground = getForeground();
-    String text = getText();
-
-    if(value instanceof MutableTaskNode) {
-      final MutableTaskNode node = (MutableTaskNode) value;
-      final Task task = node.getTask();
-      if(task != null) {
-        text = task.getName();
-        if (!selected)
-          foreground = getPriorityForeground(task.getPriority());
-      }
-    }
-
-    setForeground(foreground);
-    setText(text);
+    if(leaf) setIcon(defaultTaskIcon);
+    else setIcon(upperTaskIcon);
+    setForeground(getForeground());
+    setText(null);
 
     return this;
-  }
-
-  private Color getPriorityForeground(Priority priority) {
-    final Color colour;
-    if(priority.equals(Priority.LOWEST)) {
-      colour = new Color(13, 246,0);
-    } else if(priority.equals(Priority.LOW)) {
-      colour = new Color(0, 246, 237);
-    } else if(priority.equals(Priority.HIGH)) {
-      colour = new Color(246, 136,0);
-    } else if(priority.equals(Priority.HIGHEST)) {
-      colour = new Color(246,0,0);
-    } else {
-      colour = getForeground();
-    }
-
-    return colour;
   }
 }
 
 class TaskTreeTableCellEditor extends AbstractCellEditor implements TableCellEditor {
-
   private JTree tree;
   private JTable table;
-
   public TaskTreeTableCellEditor(JTree tree, JTable table) {
     this.tree = tree;
     this.table = table;
@@ -338,7 +346,7 @@ class TaskTreeTableCellEditor extends AbstractCellEditor implements TableCellEdi
 
   public boolean isCellEditable(EventObject e) {
     if (e instanceof MouseEvent) {
-      int column = 0;
+      int column = table.getSelectedColumn();
       MouseEvent me = (MouseEvent) e;
       MouseEvent newME = new MouseEvent(tree, me.getID(), me.getWhen(),
           me.getModifiers(), me.getX() - table.getCellRect(0, column, true).x,

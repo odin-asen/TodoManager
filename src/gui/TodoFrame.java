@@ -69,8 +69,7 @@ public class TodoFrame extends JFrame {
     setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
     addWindowListener(fileMenuAL);
     setTitle(getTitleString());
-    setIconImage(ResourceGetter.getImage(
-        ResourceList.IMAGE_TODO_LIST, "todo").getImage()); //NON-NLS
+    setIconImage(ResourceGetter.getImage(ResourceList.IMAGE_TODO_LIST).getImage());
 
     setJMenuBar(getCreateMenuBar());
 
@@ -101,9 +100,9 @@ public class TodoFrame extends JFrame {
 
     /* initialise the file menu */
     menu = new JMenu(I18nSupport.getValue(COMPONENTS, "text.file"));
-    addMenuItem(menu, AC_OPEN_FILE, ResourceGetter.getImage(ResourceList.IMAGE_OPEN_FILE, ""),
+    addMenuItem(menu, AC_OPEN_FILE, ResourceGetter.getImage(ResourceList.IMAGE_OPEN_FILE),
         KeyStroke.getKeyStroke(KeyEvent.VK_O, ctrl), fileMenuAL);
-    addMenuItem(menu, AC_SAVE, ResourceGetter.getImage(ResourceList.IMAGE_SAVE_FILE, ""),
+    addMenuItem(menu, AC_SAVE, ResourceGetter.getImage(ResourceList.IMAGE_SAVE_FILE),
         KeyStroke.getKeyStroke(KeyEvent.VK_S, ctrl), fileMenuAL);
     addMenuItem(menu, AC_SAVE_AS, KeyStroke.getKeyStroke(KeyEvent.VK_S, ctrl | shift), fileMenuAL);
     menu.addSeparator();
@@ -123,11 +122,11 @@ public class TodoFrame extends JFrame {
 
     /* initialise the task menu */
     menu = new JMenu(I18nSupport.getValue(COMPONENTS, "text.task"));
-    addMenuItem(menu, AC_ADD_TASK, ResourceGetter.getImage(ResourceList.IMAGE_PLUS_GREEN, ""),
+    addMenuItem(menu, AC_ADD_TASK, ResourceGetter.getImage(ResourceList.IMAGE_PLUS_GREEN),
         KeyStroke.getKeyStroke(KeyEvent.VK_A, ctrl), taskMenuAL);
-    addMenuItem(menu, AC_EDIT_TASK, ResourceGetter.getImage(ResourceList.IMAGE_EDIT, ""),
+    addMenuItem(menu, AC_EDIT_TASK, ResourceGetter.getImage(ResourceList.IMAGE_EDIT),
         KeyStroke.getKeyStroke(KeyEvent.VK_E, ctrl), taskMenuAL);
-    addMenuItem(menu, AC_REMOVE_TASK, ResourceGetter.getImage(ResourceList.IMAGE_MINUS_RED, ""),
+    addMenuItem(menu, AC_REMOVE_TASK, ResourceGetter.getImage(ResourceList.IMAGE_MINUS_RED),
         KeyStroke.getKeyStroke(KeyEvent.VK_R, ctrl), taskMenuAL);
     menuBar.add(menu);
 
@@ -305,18 +304,23 @@ public class TodoFrame extends JFrame {
     toolBar.setLayout(new FlowLayout(FlowLayout.LEADING));
     toolBar.setFloatable(false);
 
-    toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_OPEN_FILE, "open"), AC_OPEN_FILE, fileMenuAL)); //NON-NLS
-    toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_SAVE_FILE, "save"), AC_SAVE, fileMenuAL)); //NON-NLS
+    toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_OPEN_FILE),
+        AC_OPEN_FILE, fileMenuAL));
+    toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_SAVE_FILE),
+        AC_SAVE, fileMenuAL));
     toolBar.addSeparator();
-    toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_PLUS_GREEN, "add"), AC_ADD_TASK, taskMenuAL)); //NON-NLS
-    toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_EDIT, "edt"), AC_EDIT_TASK, taskMenuAL)); //NON-NLS
-    toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_MINUS_RED, "rmv"), AC_REMOVE_TASK, taskMenuAL)); //NON-NLS
+    toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_PLUS_GREEN),
+        AC_ADD_TASK, taskMenuAL));
+    toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_EDIT),
+        AC_EDIT_TASK, taskMenuAL));
+    toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_MINUS_RED),
+        AC_REMOVE_TASK, taskMenuAL));
 
     return toolBar;
   }
 
   private boolean hasChanged() {
-    return true;//taskTree.hasListChanged();
+    return taskTreeTable.hasListChanged();
   }
 
   /* Inner Classes */
