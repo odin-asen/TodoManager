@@ -494,7 +494,9 @@ public class TodoFrame extends JFrame {
     }
 
     private void addTask() {
-      taskTreeTable.addTask(new Task());
+      final Task task = new Task();
+      task.setName(I18nSupport.getValue(MISC, "default.task.name"));
+      taskTreeTable.addTask(task);
       statusBar.setText(I18nSupport.getValue(MESSAGES, "added.task"));
     }
 
@@ -526,7 +528,7 @@ class GUIUtilities {
       I18nSupport.getValue(MISC, "file.filter.todo.description"), "todo"); //NON-NLS
   private static final String DOT_EXTENSION_TODO = ".todo"; //NON-NLS
   private static final String DEFAULT_LIST_NAME =
-      I18nSupport.getValue(MISC, "file.default.name");
+      I18nSupport.getValue(MISC, "default.file.name");
 
   /**
    * Opens an open file dialog at the specified file if it exists.

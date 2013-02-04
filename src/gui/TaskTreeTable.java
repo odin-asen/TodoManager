@@ -91,23 +91,69 @@ public class TaskTreeTable extends JTable {
 
   /* Methods */
 
+  /**
+   * Sets the widths for the columns. The tree column has always the width of the tree.
+   * Every other column gets the width that is needed to show the whole content except for
+   * the last (index=columnCount-1) column. As the last column should be for task
+   * descriptions the column will be fit to the remaining space. It also has a minimum size
+   * which is tableWidth/columnCount.
+   */
   public void doLayout() {
-    getColumn(treeTableModel.getColumnName(treeTableModel.getTreeColumn())).setWidth(
-        treeRenderer.getPreferredSize().width);
+    getColumn(treeTableModel.getColumnName(
+        treeTableModel.getTreeColumn())).setWidth(treeRenderer.getPreferredSize().width);
+    fitColumnsToComponents(false);
+  }
+
+  private void fitColumnsToComponents(boolean boundToMaxWidth) {
+    final int maxWidth = getWidth()/getColumnCount();
+    int rowSpan[] = getVisibleRowSpan();
     for (int index = 0; index < getColumnCount()-1; index++) {
       if(index != treeTableModel.getTreeColumn()) {
         final TableColumn column = getColumn(treeTableModel.getColumnName(index));
-        final Component component = getCellRenderer(0, index).getTableCellRendererComponent(
-            this, getValueAt(0, index), false, false, 0, index);
-        final int componentWidth = component.getPreferredSize().width +5;
+        final int componentWidth = calcBiggestNeededWidth(rowSpan[0], rowSpan[1], index);
         final int columnWidth = column.getPreferredWidth();
-        column.setWidth(componentWidth > columnWidth ? componentWidth : columnWidth);
+        if(boundToMaxWidth && (componentWidth > maxWidth || columnWidth > maxWidth))
+          setColumnWidth(column, maxWidth);
+        else setColumnWidth(column, componentWidth > columnWidth ? componentWidth
+                                                                 : columnWidth);
       }
     }
+
+    /* set the description column */
+    setLastColumnWidth();
+  }
+
+  private int calcBiggestNeededWidth(int startRow, int endRow, int column) {
+    int biggestWidth = 0;
+    for (int row = startRow; row < endRow; row++) {
+      final Component component = getCellRenderer(row, column).getTableCellRendererComponent(
+          this, getValueAt(row, column), false, false, row, column);
+      final int componentWidth = component.getPreferredSize().width + 5;
+      biggestWidth = biggestWidth < componentWidth ? componentWidth : biggestWidth;
+    }
+    return biggestWidth;
+  }
+
+  private int[] getVisibleRowSpan() {
+    final int[] rowSpan = new int[2];
+    final int maxVisibleRows = getHeight()/getRowHeight()+1;
+    final int visibleRows = maxVisibleRows > getRowCount() ? getRowCount() : maxVisibleRows;
+    rowSpan[0] = getVisibleRect().y/getRowHeight();
+    rowSpan[1] = rowSpan[0]+visibleRows;
+    return rowSpan;
+  }
+
+  private void setColumnWidth(TableColumn column, int width) {
+    if(column.getWidth() != width)
+      column.setWidth(width);
+  }
+
+  private void setLastColumnWidth() {
     final TableColumn lastColumn = getColumn(getColumnName(getColumnCount()-1));
     int remainingSpace = getWidth() -
         (getColumnModel().getTotalColumnWidth() - lastColumn.getWidth());
-    lastColumn.setWidth(remainingSpace);
+    int minWidth =  getWidth()/getColumnCount();
+    setColumnWidth(lastColumn, minWidth > remainingSpace ? minWidth : remainingSpace);
   }
 
   public void resetI18n() {
@@ -140,15 +186,15 @@ public class TaskTreeTable extends JTable {
   }
 
   public void addTask(Task task) {
-    task.setName("test");
+    final boolean expand = treeTableModel.getChildCount(treeTableModel.getRoot()) == 0;
     final int selectedRow = getSelectedRow();
-    if(selectedRow >= 0) {
-      final TreePath path = treeRenderer.getPathForRow(selectedRow);
-      treeTableModel.add(path, new MutableTaskNode(task));
-      treeRenderer.setSelectionRow(selectedRow);
-      listChanged = true;
-      updateUI();
-    }
+    final TreePath path = treeRenderer.getPathForRow(selectedRow);
+    treeTableModel.add(path, new MutableTaskNode(task));
+    treeRenderer.setSelectionRow(selectedRow);
+    listChanged = true;
+    if(expand)
+      treeRenderer.expandPath(new TreePath(treeTableModel.getRoot()));
+    updateUI();
   }
 
   /**
@@ -190,6 +236,7 @@ public class TaskTreeTable extends JTable {
       return treeRenderer;
 
     treeRenderer = new TaskTreeTableCellRenderer(this, treeTableModel);
+    treeRenderer.setRootVisible(false);
     return treeRenderer;
   }
 

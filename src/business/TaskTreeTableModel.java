@@ -102,7 +102,8 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
     int index = columnIndex-1;
     checkIndex(index, GETTER.size());
     try {
-      return GETTER.get(index).invoke(((MutableTaskNode) node).getTask());
+      if(node != null)
+        return GETTER.get(index).invoke(((MutableTaskNode) node).getTask());
     } catch (IllegalAccessException e) {
       LOGGER.severe("Illegal access on a task: " + e.getMessage());
     } catch (InvocationTargetException e) {
@@ -123,7 +124,7 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
     checkIndex(index, SETTER.size());
     try {
       final Method setter = SETTER.get(index);
-      if(value != null && value.getClass().equals(setter.getParameterTypes()[0]))
+      if(value != null && value.getClass().equals(setter.getParameterTypes()[0]) && node != null)
         setter.invoke(((MutableTaskNode) node).getTask(), value);
     } catch (IllegalAccessException e) {
       LOGGER.severe("Illegal access on a task: " + e.getMessage());
