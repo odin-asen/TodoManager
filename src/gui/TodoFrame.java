@@ -37,7 +37,6 @@ public class TodoFrame extends JFrame {
   private static final String AC_CLOSE = "close"; //NON-NLS
   private static final String AC_ADD_TASK = "add task"; //NON-NLS
   private static final String AC_REMOVE_TASK = "remove task"; //NON-NLS
-  private static final String AC_EDIT_TASK = "edit task"; //NON-NLS
   private static final String AC_LANGUAGE_ENG = "english"; //NON-NLS
   private static final String AC_LANGUAGE_GER = "deutsch"; //NON-NLS
 
@@ -124,8 +123,6 @@ public class TodoFrame extends JFrame {
     menu = new JMenu(I18nSupport.getValue(COMPONENTS, "text.task"));
     addMenuItem(menu, AC_ADD_TASK, ResourceGetter.getImage(ResourceList.IMAGE_PLUS_GREEN),
         KeyStroke.getKeyStroke(KeyEvent.VK_A, ctrl), taskMenuAL);
-    addMenuItem(menu, AC_EDIT_TASK, ResourceGetter.getImage(ResourceList.IMAGE_EDIT),
-        KeyStroke.getKeyStroke(KeyEvent.VK_E, ctrl), taskMenuAL);
     addMenuItem(menu, AC_REMOVE_TASK, ResourceGetter.getImage(ResourceList.IMAGE_MINUS_RED),
         KeyStroke.getKeyStroke(KeyEvent.VK_R, ctrl), taskMenuAL);
     menuBar.add(menu);
@@ -213,9 +210,12 @@ public class TodoFrame extends JFrame {
     button = (JButton) toolBar.getComponent(3);
     button.setToolTipText(I18nSupport.getValue(COMPONENTS, "tooltip.add.task"));
     button = (JButton) toolBar.getComponent(4);
-    button.setToolTipText(I18nSupport.getValue(COMPONENTS, "tooltip.edit.task"));
-    button = (JButton) toolBar.getComponent(5);
     button.setToolTipText(I18nSupport.getValue(COMPONENTS, "tooltip.remove.task"));
+    /* component index 5 is a separator */
+    button = (JButton) toolBar.getComponent(6);
+    button.setToolTipText(I18nSupport.getValue(COMPONENTS, "tooltip.expand.all.selected"));
+    button = (JButton) toolBar.getComponent(7);
+    button.setToolTipText(I18nSupport.getValue(COMPONENTS, "tooltip.collapse.all.selected"));
   }
 
   private void resetMenuItemsI18n() {
@@ -231,7 +231,6 @@ public class TodoFrame extends JFrame {
     /* item 3 is a separator */
     item = ((JMenuItem) menu.getMenuComponent(4));
     item.setText(I18nSupport.getValue(COMPONENTS, "text.close"));
-
 
     /* reset the settings menu */
     menu = menuBar.getMenu(1);
@@ -255,8 +254,6 @@ public class TodoFrame extends JFrame {
     item = ((JMenuItem) menu.getMenuComponent(0));
     item.setText(I18nSupport.getValue(COMPONENTS, "text.add.task"));
     item = ((JMenuItem) menu.getMenuComponent(1));
-    item.setText(I18nSupport.getValue(COMPONENTS, "text.edit.task"));
-    item = ((JMenuItem) menu.getMenuComponent(2));
     item.setText(I18nSupport.getValue(COMPONENTS, "text.remove.task"));
   }
 
@@ -304,6 +301,12 @@ public class TodoFrame extends JFrame {
     toolBar.setLayout(new FlowLayout(FlowLayout.LEADING));
     toolBar.setFloatable(false);
 
+    final ActionListener expandListener = new ActionListener(){
+      public void actionPerformed(ActionEvent e) {
+        taskTreeTable.expandSelectedNodes();}};
+    final ActionListener collapseListener = new ActionListener(){
+      public void actionPerformed(ActionEvent e) {
+        taskTreeTable.collapseSelectedNodes();}};
     toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_OPEN_FILE),
         AC_OPEN_FILE, fileMenuAL));
     toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_SAVE_FILE),
@@ -311,10 +314,13 @@ public class TodoFrame extends JFrame {
     toolBar.addSeparator();
     toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_PLUS_GREEN),
         AC_ADD_TASK, taskMenuAL));
-    toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_EDIT),
-        AC_EDIT_TASK, taskMenuAL));
     toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_MINUS_RED),
         AC_REMOVE_TASK, taskMenuAL));
+    toolBar.addSeparator();
+    toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_ARROWS_OUT),
+        "", expandListener));
+    toolBar.add(GUIUtilities.createButton(
+        ResourceGetter.getImage(ResourceList.IMAGE_ARROWS_IN), "", collapseListener));
 
     return toolBar;
   }
@@ -460,37 +466,10 @@ public class TodoFrame extends JFrame {
 
       if (AC_ADD_TASK.equals(e.getActionCommand())) {
         addTask();
-      } else if (AC_EDIT_TASK.equals(e.getActionCommand())) {
-        editTask();
       } else if (AC_REMOVE_TASK.equals(e.getActionCommand())) {
         removeTasks();
       }
       updateGUI();
-    }
-
-    private void editTask() {
-//      final List<MutableTaskNode> tasks = taskTree.getSelectedNodes();
-//      String text = "";
-//      if(tasks.size() > 1) {
-//        String[] strings = {I18nSupport.getValue(COMPONENTS, "text.yes.edit.all"),
-//            I18nSupport.getValue(COMPONENTS, "text.only.the.first"),
-//            I18nSupport.getValue(COMPONENTS, "text.cancel"),
-//            I18nSupport.getValue(COMPONENTS, "text.not.sure")};
-//        int result = GUIUtilities.showConfirmDialog(frame, strings,
-//            I18nSupport.getValue(MESSAGES, "edit.all.selected.tasks.question"),
-//            I18nSupport.getValue(TITLES, "edit.tasks"),
-//            JOptionPane.QUESTION_MESSAGE, 4);
-//        if(result == 1) {
-//          //TODO Alles editieren
-//          text = I18nSupport.getValue(MESSAGES, "changed.task");
-//        } else if(result == 2) {
-//          //TODO nur das erste editieren
-//          text = I18nSupport.getValue(MESSAGES, "changed.task");
-//        } else if(result == 3) {
-//          taskTree.deselectAllTasks();
-//        }
-//      }
-//      statusBar.setText(text); TODO
     }
 
     private void addTask() {

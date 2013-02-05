@@ -6,6 +6,7 @@ import business.TaskTreeTableModel;
 import com.toedter.calendar.JDateChooser;
 import dto.DTOTask;
 import dto.TaskProperty;
+import dto.Utility;
 import gui.treeTable.TreeTableModel;
 import gui.treeTable.TreeTableModelAdapter;
 import i18n.I18nSupport;
@@ -30,9 +31,8 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.EventObject;
-import java.util.Locale;
+import java.util.*;
+import java.util.List;
 
 import static dto.TaskProperty.Attribution;
 import static dto.TaskProperty.Priority;
@@ -226,6 +226,80 @@ public class TaskTreeTable extends JTable {
     super.setModel(treeTableModelAdapter);
   }
 
+  /**
+   * Expands all selected nodes, so that all sub nodes will expand their children, so
+   * on and so far. The previous selected nodes that are still visible after the collapse
+   * action will remain to be selected. If no node is selected all direct children of the
+   * root will do this action.
+   */
+  public void expandSelectedNodes() {
+    final int[] rows = getSelectedRows();
+    final List<TreePath> shortToLong;
+    if(rows.length == 0)
+      shortToLong = getRootChildrenPaths();
+    else shortToLong = Utility.getLengthSortedList(true, rows, treeRenderer);
+    final TreePath[] selectedPaths = new TreePath[shortToLong.size()];
+    for (int index = 0; index < shortToLong.size(); index++) {
+      final TreePath path = shortToLong.get(index);
+      expandPathComplete(path);
+      selectedPaths[index] = treeRenderer.getRowForPath(path) != -1 ? path : null;
+    }
+    treeRenderer.setSelectionPaths(selectedPaths);
+  }
+
+  private List<TreePath> getRootChildrenPaths() {
+    final List<TreePath> paths = new ArrayList<TreePath>();
+    final TreePath rootPath = new TreePath(treeTableModel.getRoot());
+    for (int index = 0; index < treeRenderer.getRowCount(); index++) {
+      final TreePath path = treeRenderer.getPathForRow(index);
+      if(path != null && rootPath.equals(path.getParentPath()))
+        paths.add(path);
+    }
+    return paths;
+  }
+
+  private int expandPathComplete(TreePath path) {
+    int nextRow = treeRenderer.getRowForPath(path)+1;
+    treeRenderer.expandPath(path);
+    TreePath nextPath = treeRenderer.getPathForRow(nextRow);
+    while (path.isDescendant(nextPath)) {
+      nextRow = expandPathComplete(nextPath);
+      nextPath = treeRenderer.getPathForRow(nextRow);
+    }
+    return nextRow;
+  }
+
+  /**
+   * Collapses all selected nodes, so that all sub nodes will collapse their children, so
+   * on and so far. The previous selected nodes that are still visible after the collapse
+   * action will remain to be selected. If no node is selected all direct children of the
+   * root will do this action.
+   */
+  public void collapseSelectedNodes() {
+    final int[] rows = getSelectedRows();
+    final List<TreePath> longToShort;
+    if(rows.length == 0)
+      longToShort = getRootChildrenPaths();
+    else longToShort = Utility.getLengthSortedList(false, rows, treeRenderer);
+    final TreePath[] selectedPaths = new TreePath[longToShort.size()];
+    for (int index = 0; index < longToShort.size(); index++) {
+      final TreePath path = longToShort.get(index);
+      collapsePathComplete(path);
+      selectedPaths[index] = treeRenderer.getRowForPath(path) != -1 ? path : null;
+    }
+    treeRenderer.setSelectionPaths(selectedPaths);
+  }
+
+  private int collapsePathComplete(TreePath path) {
+    int nextRow = treeRenderer.getRowForPath(path)+1;
+    TreePath nextPath = treeRenderer.getPathForRow(nextRow);
+    while (path.isDescendant(nextPath)) {
+      nextRow = collapsePathComplete(nextPath);
+      nextPath = treeRenderer.getPathForRow(nextRow);
+    }
+    treeRenderer.collapsePath(path);
+    return nextRow;
+  }
   /* Getter and Setter */
 
   /**
@@ -394,8 +468,8 @@ class TaskTreeTableCellEditor extends AbstractCellEditor implements TableCellEdi
   public boolean isCellEditable(EventObject e) {
     if (e instanceof MouseEvent) {
       int column = table.getSelectedColumn();
-      MouseEvent me = (MouseEvent) e;
-      MouseEvent newME = new MouseEvent(tree, me.getID(), me.getWhen(),
+      final MouseEvent me = (MouseEvent) e;
+      final MouseEvent newME = new MouseEvent(tree, me.getID(), me.getWhen(),
           me.getModifiers(), me.getX() - table.getCellRect(0, column, true).x,
           me.getY(), 2, me.isPopupTrigger());
       tree.dispatchEvent(newME);
