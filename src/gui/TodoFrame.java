@@ -41,7 +41,7 @@ public class TodoFrame extends JFrame {
   private static final String AC_LANGUAGE_GER = "deutsch"; //NON-NLS
 
   /* constant fields */
-  private static final String VERSION_NUMBER = "0.5";
+  private static final String VERSION_NUMBER = "1.0";
   private static final int STATUS_BAR_HEIGHT = 20;
 
   private JMenuBar menuBar;
