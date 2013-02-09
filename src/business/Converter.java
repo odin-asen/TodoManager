@@ -52,7 +52,7 @@ public class Converter {
     task.setDueDate(dtoTask.dueDate);
     task.setName(dtoTask.name);
     task.setPermanent(dtoTask.permanent);
-    task.setDescription(dtoTask.description);
+    task.setPriority(dtoTask.priority);
     return task;
   }
 

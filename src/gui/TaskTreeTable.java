@@ -165,11 +165,10 @@ public class TaskTreeTable extends JTable {
 
   @SuppressWarnings("UnusedDeclaration")
   public void changeSelectedTasks(DTOTask dtoTask) {
-    final TreePath[] paths = treeRenderer.getSelectionPaths();
-    if (paths != null) {
-      for (TreePath path : paths) {
-        ((MutableTaskNode) path.getLastPathComponent()).getTask().change(dtoTask);
-      }
+    final int[] selectedRows = getSelectedRows();
+    for (int row : selectedRows) {
+      final TreePath path = treeRenderer.getPathForRow(row);
+      ((MutableTaskNode) path.getLastPathComponent()).getTask().change(dtoTask);
     }
   }
 
@@ -202,20 +201,22 @@ public class TaskTreeTable extends JTable {
    */
   public int removeSelectedTasks() {
     int removed = 0;
+    /* The rows of the table must be used because the tree does not seem to
+     * react to selections properly.
+     */
     final int[] selectionRows = getSelectedRows();
-    if (selectionRows != null) {
-      for (int row : selectionRows) {
-        final TreePath path = treeRenderer.getPathForRow(row);
-        removed = removed + treeTableModel.remove(path);
-      }
-      listChanged = removed > 0;
-      updateUI();
+    //TODO die Anzahl der gelöschten Tasks ist falsch, wenn subtasks und eltern angezeigt und selektiert sind
+    for (int row : selectionRows) {
+      final TreePath path = treeRenderer.getPathForRow(row);
+      removed = removed + treeTableModel.remove(path);
     }
+    listChanged = selectionRows.length > 0;
+    updateUI();
     return removed;
   }
 
   public MutableTaskNode getTaskRoot() {
-    return (MutableTaskNode) treeRenderer.getPathForRow(0).getLastPathComponent();
+    return (MutableTaskNode) treeTableModel.getRoot();
   }
 
   public void setRoot(MutableTaskNode root) {
@@ -323,7 +324,7 @@ public class TaskTreeTable extends JTable {
   }
 
   public boolean hasSelectedTasks() {
-    return treeRenderer.getSelectionCount() > 0;
+    return getSelectedRow() != -1;
   }
 
   /* Inner classes */
