@@ -269,6 +269,10 @@ public class TodoFrame extends JFrame {
     if (taskTreeTable.hasListChanged())
       setTitle(getTitleString() + "*");
     else setTitle(getTitleString());
+    /* It looks like that the title sometimes only updates (at least in Ubuntu) once in a while */
+    /* or after changing the bound properties. */
+    setSize(getWidth()+1, getHeight());
+    setSize(getWidth()-1, getHeight());
   }
 
   /* Getter and Setter */
