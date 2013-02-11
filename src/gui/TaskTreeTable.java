@@ -168,7 +168,7 @@ public class TaskTreeTable extends JTable {
       ((MutableTaskNode) path.getLastPathComponent()).getTask().change(dtoTask);
     }
   }
-
+                //TODO löschen, da clearSelection vorhanden ist
   public void deselectAllTasks() {
     treeRenderer.setSelectionPath(null);
   }
@@ -242,7 +242,15 @@ public class TaskTreeTable extends JTable {
       expandPathComplete(path);
       selectedPaths[index] = treeRenderer.getRowForPath(path) != -1 ? path : null;
     }
-    treeRenderer.setSelectionPaths(selectedPaths);
+    setSelectionPaths(selectedPaths);
+  }
+
+  private void setSelectionPaths(TreePath[] paths) {
+    clearSelection();
+    for (TreePath path : paths) {
+      final int row = treeRenderer.getRowForPath(path);
+      getSelectionModel().addSelectionInterval(row,row);
+    }
   }
 
   private List<TreePath> getRootChildrenPaths() {
@@ -285,7 +293,7 @@ public class TaskTreeTable extends JTable {
       collapsePathComplete(path);
       selectedPaths[index] = treeRenderer.getRowForPath(path) != -1 ? path : null;
     }
-    treeRenderer.setSelectionPaths(selectedPaths);
+    setSelectionPaths(selectedPaths);
   }
 
   private int collapsePathComplete(TreePath path) {
