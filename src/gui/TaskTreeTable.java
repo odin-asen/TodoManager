@@ -192,19 +192,20 @@ public class TaskTreeTable extends JTable {
    * Removes all selected task and their sub tasks from the list.
    */
   public int removeSelectedTasks() {
-    int removed = 0;
+    final MutableTaskNode root = ((MutableTaskNode) treeTableModel.getRoot());
+    final int totalTasksBefore = root.countAllSubNodes();
     /* The rows of the table must be used because the tree does not seem to
      * react to selections properly.
      */
     final int[] selectionRows = getSelectedRows();
-    //TODO die Anzahl der gelöschten Tasks ist falsch, wenn subtasks und eltern angezeigt und selektiert sind
-    for (int row : selectionRows) {
-      final TreePath path = treeRenderer.getPathForRow(row);
-      removed = removed + treeTableModel.remove(path);
-    }
+
+    for (int row : selectionRows)
+      treeTableModel.remove(treeRenderer.getPathForRow(row));
+
     listChanged = selectionRows.length > 0;
+    clearSelection();
     updateUI();
-    return removed;
+    return totalTasksBefore-root.countAllSubNodes();
   }
 
   public MutableTaskNode getTaskRoot() {
