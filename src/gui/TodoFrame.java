@@ -495,7 +495,7 @@ public class TodoFrame extends JFrame {
             text = I18nSupport.getValue(MESSAGES, "removed.tasks.0",deleted);
           }
         } else if(result == JOptionPane.NO_OPTION)
-          taskTreeTable.deselectAllTasks();
+          taskTreeTable.clearSelection();
         statusBar.setText(text);
       }
     }

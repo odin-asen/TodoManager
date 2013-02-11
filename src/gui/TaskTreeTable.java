@@ -168,10 +168,6 @@ public class TaskTreeTable extends JTable {
       ((MutableTaskNode) path.getLastPathComponent()).getTask().change(dtoTask);
     }
   }
-                //TODO löschen, da clearSelection vorhanden ist
-  public void deselectAllTasks() {
-    treeRenderer.setSelectionPath(null);
-  }
 
   @SuppressWarnings("UnusedDeclaration")
   public Task getTask(int index) {
@@ -184,9 +180,8 @@ public class TaskTreeTable extends JTable {
   public void addTask(Task task) {
     final boolean expand = treeTableModel.getChildCount(treeTableModel.getRoot()) == 0;
     final int selectedRow = getSelectedRow();
-    final TreePath path = treeRenderer.getPathForRow(selectedRow);
-    treeTableModel.add(path, new MutableTaskNode(task));
-    treeRenderer.setSelectionRow(selectedRow);
+    treeTableModel.add(treeRenderer.getPathForRow(selectedRow), new MutableTaskNode(task));
+    getSelectionModel().setSelectionInterval(selectedRow, selectedRow);
     listChanged = true;
     if(expand)
       treeRenderer.expandPath(new TreePath(treeTableModel.getRoot()));
