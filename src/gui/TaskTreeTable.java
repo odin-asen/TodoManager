@@ -220,32 +220,28 @@ public class TaskTreeTable extends JTable {
   }
 
   /**
-   * Expands all selected nodes, so that all sub nodes will expand their children, so
-   * on and so far. The previous selected nodes that are still visible after the collapse
-   * action will remain to be selected. If no node is selected all direct children of the
-   * root will do this action.
+   * Collapses or expands all selected nodes, so that all sub nodes will collapse or expand
+   * their children, so on and so far. The previous selected nodes that are still visible after a
+   * collapse action will remain to be selected. If no node is selected all direct children of the
+   * root will do the chosen action.
+   * @param expand If true, all selected nodes will be expanded. If false, all selected nodes will
+   *               be collapsed.
    */
-  public void expandSelectedNodes() {
+  public void expandCollapseSelectedNodes(boolean expand) {
     final int[] rows = getSelectedRows();
-    final List<TreePath> shortToLong;
+    final List<TreePath> sortedPaths;
     if(rows.length == 0)
-      shortToLong = getRootChildrenPaths();
-    else shortToLong = Utility.getLengthSortedList(true, rows, treeRenderer);
-    final TreePath[] selectedPaths = new TreePath[shortToLong.size()];
-    for (int index = 0; index < shortToLong.size(); index++) {
-      final TreePath path = shortToLong.get(index);
-      expandPathComplete(path);
+      sortedPaths = getRootChildrenPaths();
+    else sortedPaths = Utility.getLengthSortedList(expand, rows, treeRenderer);
+    final TreePath[] selectedPaths = new TreePath[sortedPaths.size()];
+    for (int index = 0; index < sortedPaths.size(); index++) {
+      final TreePath path = sortedPaths.get(index);
+      if(expand)
+        expandPathComplete(path);
+      else collapsePathComplete(path);
       selectedPaths[index] = treeRenderer.getRowForPath(path) != -1 ? path : null;
     }
     setSelectionPaths(selectedPaths);
-  }
-
-  private void setSelectionPaths(TreePath[] paths) {
-    clearSelection();
-    for (TreePath path : paths) {
-      final int row = treeRenderer.getRowForPath(path);
-      getSelectionModel().addSelectionInterval(row,row);
-    }
   }
 
   private List<TreePath> getRootChildrenPaths() {
@@ -270,27 +266,6 @@ public class TaskTreeTable extends JTable {
     return nextRow;
   }
 
-  /**
-   * Collapses all selected nodes, so that all sub nodes will collapse their children, so
-   * on and so far. The previous selected nodes that are still visible after the collapse
-   * action will remain to be selected. If no node is selected all direct children of the
-   * root will do this action.
-   */
-  public void collapseSelectedNodes() {
-    final int[] rows = getSelectedRows();
-    final List<TreePath> longToShort;
-    if(rows.length == 0)
-      longToShort = getRootChildrenPaths();
-    else longToShort = Utility.getLengthSortedList(false, rows, treeRenderer);
-    final TreePath[] selectedPaths = new TreePath[longToShort.size()];
-    for (int index = 0; index < longToShort.size(); index++) {
-      final TreePath path = longToShort.get(index);
-      collapsePathComplete(path);
-      selectedPaths[index] = treeRenderer.getRowForPath(path) != -1 ? path : null;
-    }
-    setSelectionPaths(selectedPaths);
-  }
-
   private int collapsePathComplete(TreePath path) {
     int nextRow = treeRenderer.getRowForPath(path)+1;
     TreePath nextPath = treeRenderer.getPathForRow(nextRow);
@@ -300,6 +275,14 @@ public class TaskTreeTable extends JTable {
     }
     treeRenderer.collapsePath(path);
     return nextRow;
+  }
+
+  private void setSelectionPaths(TreePath[] paths) {
+    clearSelection();
+    for (TreePath path : paths) {
+      final int row = treeRenderer.getRowForPath(path);
+      getSelectionModel().addSelectionInterval(row,row);
+    }
   }
 
   private TreePath[] getPathForRange(int index0, int index1) {

@@ -303,10 +303,10 @@ public class TodoFrame extends JFrame {
 
     final ActionListener expandListener = new ActionListener(){
       public void actionPerformed(ActionEvent e) {
-        taskTreeTable.expandSelectedNodes();}};
+        taskTreeTable.expandCollapseSelectedNodes(true);}};
     final ActionListener collapseListener = new ActionListener(){
       public void actionPerformed(ActionEvent e) {
-        taskTreeTable.collapseSelectedNodes();}};
+        taskTreeTable.expandCollapseSelectedNodes(false);}};
     toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_OPEN_FILE),
         AC_OPEN_FILE, fileMenuAL));
     toolBar.add(GUIUtilities.createButton(ResourceGetter.getImage(ResourceList.IMAGE_SAVE_FILE),
