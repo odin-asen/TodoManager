@@ -14,15 +14,14 @@ import resources.ResourceGetter;
 import resources.ResourceList;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -61,9 +60,7 @@ public class TaskTreeTable extends JTable {
     setRoot(MutableTaskNode.getRootInstance());
 
     /* simultaneous selection for the tree and the table */
-    TreeTableSelectionModel selectionModel = new TreeTableSelectionModel();
-    treeRenderer.setSelectionModel(selectionModel); //For the tree
-    setSelectionModel(selectionModel.getListSelectionModel()); //For the table
+    setSelectionModel(new ListToTreeSelectionModelWrapper(treeRenderer.getSelectionModel()));
 
     /* set renderer and editor for the tree */
     setDefaultRenderer(TreeTableModel.class, treeRenderer);
@@ -301,6 +298,21 @@ public class TaskTreeTable extends JTable {
     treeRenderer.collapsePath(path);
     return nextRow;
   }
+
+  private TreePath[] getPathForRange(int index0, int index1) {
+    if(index0 < 0 || index1 < 0)
+      return new TreePath[0];
+
+    final TreePath[] paths = new TreePath[Math.abs(index0-index1)+1];
+    for (int index = 0, row = index0; index < paths.length; index++) {
+      paths[index] = treeRenderer.getPathForRow(row);
+      if(index0 < index1)
+        row++;
+      else row--;
+    }
+    return paths;
+  }
+
   /* Getter and Setter */
 
   /**
@@ -329,14 +341,29 @@ public class TaskTreeTable extends JTable {
 
   /* Inner classes */
 
-  class TreeTableSelectionModel extends DefaultTreeSelectionModel {
-    private ListSelectionModel getListSelectionModel() {
-      return listSelectionModel;
+  private class ListToTreeSelectionModelWrapper extends DefaultListSelectionModel {
+    private TreeSelectionModel treeSelectionModel;
+    private ListToTreeSelectionModelWrapper(TreeSelectionModel treeSelectionModel) {
+      this.treeSelectionModel = treeSelectionModel;
     }
 
-    @SuppressWarnings("UnusedDeclaration")
-    void addListSelectionListener(ListSelectionListener l) {
-      listSelectionModel.addListSelectionListener(l);
+    public void addSelectionInterval(int index0, int index1) {
+      super.addSelectionInterval(index0, index1);
+      treeSelectionModel.addSelectionPaths(getPathForRange(index0, index1));
+    }
+
+    public void removeSelectionInterval(int index0, int index1) {
+      super.removeSelectionInterval(index0, index1);
+      treeSelectionModel.removeSelectionPaths(getPathForRange(index0, index1));
+    }
+
+    public void setSelectionInterval(int index0, int index1) {
+      super.setSelectionInterval(index0, index1);
+      treeSelectionModel.setSelectionPaths(getPathForRange(index0, index1));
+    }
+
+    public void setSelectionMode(int selectionMode) {
+      super.setSelectionMode(selectionMode);
     }
   }
 }
@@ -467,15 +494,23 @@ class TaskTreeTableCellEditor extends AbstractCellEditor implements TableCellEdi
   }
 
   public boolean isCellEditable(EventObject e) {
-    if (e instanceof MouseEvent) {
-      int column = table.getSelectedColumn();
-      final MouseEvent me = (MouseEvent) e;
-      final MouseEvent newME = new MouseEvent(tree, me.getID(), me.getWhen(),
-          me.getModifiers(), me.getX() - table.getCellRect(0, column, true).x,
-          me.getY(), 2, me.isPopupTrigger());
-      tree.dispatchEvent(newME);
+    if(e instanceof MouseEvent) {
+      for(int counter = 0; counter < table.getColumnCount(); counter++) {
+        if(table.getColumnClass(counter) == TreeTableModel.class) {
+          dispatchMouseEvent((MouseEvent) e, counter);
+          counter = table.getColumnCount();
+        }
+      }
     }
     return false;
+  }
+
+  private void dispatchMouseEvent(MouseEvent me, int column) {
+    int transX = me.getX()-table.getCellRect(0, column, true).x;
+    MouseEvent newMouseEvent = new MouseEvent(tree, me.getID(), me.getWhen(),
+        me.getModifiers(), transX, me.getY(), me.getClickCount(), me.isPopupTrigger());
+    tree.dispatchEvent(newMouseEvent);
+    table.revalidate();
   }
 
   public Object getCellEditorValue() {
