@@ -1,6 +1,7 @@
 package gui;
 
 import business.Converter;
+import business.ConverterException;
 import business.MutableTaskNode;
 import business.Task;
 import data.TodoFileIO;
@@ -271,7 +272,7 @@ public class TodoFrame extends JFrame {
     else setTitle(getTitleString());
     /* It looks like that the title sometimes only updates (at least in Ubuntu) once in a while */
     /* or after changing the bound properties. */
-    setSize(getWidth()+1, getHeight());
+    setSize(getWidth() + 1, getHeight());
     setSize(getWidth()-1, getHeight());
   }
 
@@ -435,7 +436,7 @@ public class TodoFrame extends JFrame {
           JOptionPane.showMessageDialog(frame,
               I18nSupport.getValue(MESSAGES, "could.not.load.list"), "",
               JOptionPane.ERROR_MESSAGE);
-        } catch (Exception e) {
+        } catch (ConverterException e) {
           JOptionPane.showMessageDialog(frame,
               I18nSupport.getValue(MESSAGES, "wrong.file.format"), "",
               JOptionPane.ERROR_MESSAGE);

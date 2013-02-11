@@ -16,8 +16,11 @@ public class Converter {
    * {@link #toDTOList(MutableTaskNode)}.
    * @param taskList List to convert to a MutableTaskNode.
    * @return An object of MutableTaskNode that is a root.
+   * @throws ConverterException Will be thrown if the surpassed taskList contains multiple tasks
+   *                                  with the same id.
    */
-  public static MutableTaskNode fromDTOList(List<DTOTask> taskList) {
+  public static MutableTaskNode fromDTOList(List<DTOTask> taskList)
+    throws ConverterException {
     assert taskList != null;
     final Map<String, MutableTaskNode> nodeMap = getMap(taskList);
     final MutableTaskNode root = MutableTaskNode.getRootInstance();
@@ -33,12 +36,15 @@ public class Converter {
     return root;
   }
 
-  private static Map<String, MutableTaskNode> getMap(List<DTOTask> taskList) {
+  private static Map<String, MutableTaskNode> getMap(List<DTOTask> taskList)
+      throws ConverterException {
     final Map<String, MutableTaskNode> map =
         new HashMap<String, MutableTaskNode>(taskList.size());
-    for (DTOTask dtoTask : taskList)
-      map.put(dtoTask.id, new MutableTaskNode(fromDTO(dtoTask)));
-    //TODO fehler ausgeben, wenn mehrere tasks die gleiche id haben
+    for (DTOTask dtoTask : taskList) {
+      if(!map.containsKey(dtoTask.id))
+        map.put(dtoTask.id, new MutableTaskNode(fromDTO(dtoTask)));
+      else throw new ConverterException("Task list contains at least two tasks with two tasks!");
+    }
     return map;
   }
 
@@ -96,3 +102,4 @@ public class Converter {
     }
   }
 }
+
