@@ -190,7 +190,7 @@ public class TodoFrame extends JFrame {
     /* reset sub components i18n */
     resetMenuItemsI18n();
     resetToolBarI18n();
-    statusBar.resetI18n();
+    statusBar.setLocale(Locale.getDefault());
   }
 
   private void setDefaultLocale(JComponent parent) {

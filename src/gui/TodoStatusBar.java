@@ -40,7 +40,7 @@ public class TodoStatusBar extends JPanel implements Runnable {
     setLayout(new BorderLayout());
     add(mainStatusLabel, BorderLayout.CENTER);
     add(getBesideLabelPanel(), BorderLayout.LINE_END);
-    resetI18n();
+    setLocale(Locale.getDefault());
 
     /* init labels */
 
@@ -88,12 +88,12 @@ public class TodoStatusBar extends JPanel implements Runnable {
     }
   }
 
-  /* Getter and Setter */
-
-  public void resetI18n() {
-    calendar = GregorianCalendar.getInstance(Locale.getDefault());
-    format = new SimpleDateFormat(I18nSupport.getValue(MISC, "format.date"),
-        Locale.getDefault());
+  public void setLocale(Locale locale) {
+    calendar = GregorianCalendar.getInstance(locale);
+    format = new SimpleDateFormat(I18nSupport.getValue(MISC, "format.date"), locale);
     format.setCalendar(calendar);
+    mainStatusLabel.setLocale(locale);
+    besideLabelPanel.setLocale(locale);
   }
+  /* Getter and Setter */
 }
