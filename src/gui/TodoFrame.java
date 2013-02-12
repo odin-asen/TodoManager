@@ -170,39 +170,40 @@ public class TodoFrame extends JFrame {
     getContentPane().add(getStatusBar(), BorderLayout.PAGE_END);
     getContentPane().add(getToolBar(), BorderLayout.PAGE_START);
 
-    resetI18n();
+    setLocale(Locale.getDefault());
   }
 
-  private void resetI18n() {
+  public void setLocale(Locale locale) {
+    super.setLocale(locale);
+
     /* reset frames i18n */
     setTitle(getTitleString());
-
-    taskTreeTable.setLocale(Locale.getDefault());
 
     /* set the locale of the frame and of all components */
     for (Component component : getComponents()) {
       if (component instanceof JComponent)
-        setDefaultLocale((JComponent) component);
+        setAllLocales((JComponent) component, locale);
     }
-    setLocale(Locale.getDefault());
-    revalidate();
 
     /* reset sub components i18n */
     resetMenuItemsI18n();
     resetToolBarI18n();
-    statusBar.setLocale(Locale.getDefault());
+    revalidate();
   }
 
-  private void setDefaultLocale(JComponent parent) {
+  private void setAllLocales(JComponent parent, Locale locale) {
     for (Component component : parent.getComponents()) {
       if (component instanceof JComponent)
-        setDefaultLocale((JComponent) component);
-      component.setLocale(Locale.getDefault());
+        setAllLocales((JComponent) component, locale);
+      component.setLocale(locale);
       component.revalidate();
     }
   }
 
   private void resetToolBarI18n() {
+    if(toolBar == null)
+      return;
+
     JButton button = (JButton) toolBar.getComponent(0);
     button.setToolTipText(I18nSupport.getValue(COMPONENTS, "tooltip.open.list"));
     button = (JButton) toolBar.getComponent(1);
@@ -220,6 +221,9 @@ public class TodoFrame extends JFrame {
   }
 
   private void resetMenuItemsI18n() {
+    if(menuBar == null)
+      return;
+
     /* reset the file menu */
     JMenu menu = menuBar.getMenu(0);
     menu.setText(I18nSupport.getValue(COMPONENTS, "text.file"));
@@ -447,16 +451,16 @@ public class TodoFrame extends JFrame {
 
   private class SettingsMenuItemListener implements ActionListener {
     public void actionPerformed(ActionEvent e) {
-      final String text = I18nSupport.getValue(MESSAGES, "changed.language");
       if (AC_LANGUAGE_ENG.equals(e.getActionCommand())) {
-        Locale.setDefault(Locale.UK);
-        resetI18n();
-        statusBar.setText(text);
+        final Locale locale = Locale.UK;
+        Locale.setDefault(locale);
+        setLocale(locale);
       } else if (AC_LANGUAGE_GER.equals(e.getActionCommand())) {
-        Locale.setDefault(Locale.GERMANY);
-        resetI18n();
-        statusBar.setText(text);
+        final Locale locale = Locale.GERMANY;
+        Locale.setDefault(locale);
+        setLocale(locale);
       }
+      statusBar.setText(I18nSupport.getValue(MESSAGES, "changed.language"));
     }
   }
 
