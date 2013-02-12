@@ -177,7 +177,7 @@ public class TodoFrame extends JFrame {
     /* reset frames i18n */
     setTitle(getTitleString());
 
-    taskTreeTable.resetI18n();
+    taskTreeTable.setLocale(Locale.getDefault());
 
     /* set the locale of the frame and of all components */
     for (Component component : getComponents()) {

@@ -29,7 +29,6 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
   private static final List<Method> SETTER = ReflectionUtility.getSortedSetters(Task.class);
   private static final Logger LOGGER =
       LoggingUtility.getLogger(TaskTreeTableModel.class.getName());
-  private static final String I18N_SUFFIX_TREE = "tree.header"; //NON-NLS
   private static final int TREE_COLUMN = 0;
 
   private List<String> columnNames;
@@ -37,15 +36,7 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
   public TaskTreeTableModel(MutableTaskNode rootNode) {
     super(rootNode);
     root = rootNode;
-    initColumnNames();
-  }
-
-  private void initColumnNames() {
-    List<Field> getterSetterFields = ReflectionUtility.getterSetterFields(Task.class);
-    columnNames = new ArrayList<String>(getterSetterFields.size()+1);
-    columnNames.add(I18N_SUFFIX_TREE);
-    for (Field field : getterSetterFields)
-      columnNames.add(field.getName());
+    updateLocale();
   }
 
   private void checkIndex(int index, int compareTo) {
@@ -53,8 +44,15 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
       throw new ArrayIndexOutOfBoundsException("The parameter is not >= 0 and not < "+compareTo);
   }
 
-  public void resetI18n() {
-    initColumnNames();
+  /**
+   * Sets the column names of the table header.
+   */
+  public void updateLocale() {
+    List<Field> getterSetterFields = ReflectionUtility.getterSetterFields(Task.class);
+    columnNames = new ArrayList<String>(getterSetterFields.size()+1);
+    columnNames.add(I18nSupport.getValue(COMPONENTS, "text.tree.header"));
+    for (Field field : getterSetterFields)
+      columnNames.add(I18nSupport.getValue(COMPONENTS, "text." + field.getName()));
   }
 
   public Object getChild(Object parent, int index) {
@@ -79,7 +77,7 @@ public class TaskTreeTableModel extends AbstractTreeTableModel {
 
   public String getColumnName(int columnIndex) {
     checkIndex(columnIndex, columnNames.size());
-    return I18nSupport.getValue(COMPONENTS, "text." + columnNames.get(columnIndex));
+    return columnNames.get(columnIndex);
   }
 
   public Class<?> getColumnClass(int columnIndex) {

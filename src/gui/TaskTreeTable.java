@@ -153,13 +153,6 @@ public class TaskTreeTable extends JTable {
     setColumnWidth(lastColumn, minWidth > remainingSpace ? minWidth : remainingSpace);
   }
 
-  public void resetI18n() {
-    treeTableModel.resetI18n();
-    tableCellRenderer.setLocale(Locale.getDefault());
-    treeTableModelAdapter.fireTableCellUpdated(TableModelEvent.HEADER_ROW,
-        TableModelEvent.ALL_COLUMNS);
-  }
-
   @SuppressWarnings("UnusedDeclaration")
   public void changeSelectedTasks(DTOTask dtoTask) {
     final int[] selectedRows = getSelectedRows();
@@ -301,6 +294,14 @@ public class TaskTreeTable extends JTable {
   }
 
   /* Getter and Setter */
+
+  public void setLocale(Locale locale) {
+    super.setLocale(locale);
+    treeTableModel.updateLocale();
+    tableCellRenderer.setLocale(locale);
+    treeTableModelAdapter.fireTableCellUpdated(TableModelEvent.HEADER_ROW,
+        TableModelEvent.ALL_COLUMNS);
+  }
 
   /**
    * Create the component that contains all category trees
