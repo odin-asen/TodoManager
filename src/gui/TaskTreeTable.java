@@ -155,7 +155,7 @@ public class TaskTreeTable extends JTable {
 
   public void resetI18n() {
     treeTableModel.resetI18n();
-    tableCellRenderer.resetI18n();
+    tableCellRenderer.setLocale(Locale.getDefault());
     treeTableModelAdapter.fireTableCellUpdated(TableModelEvent.HEADER_ROW,
         TableModelEvent.ALL_COLUMNS);
   }
@@ -415,12 +415,12 @@ class TaskTableCellRenderer extends JLabel implements TableCellRenderer {
 
   public TaskTableCellRenderer() {
     setOpaque(true);
-    resetI18n();
+    setLocale(Locale.getDefault());
   }
 
-  public void resetI18n() {
-    dateFormat = new SimpleDateFormat(
-        I18nSupport.getValue(MISC, "format.due.date"), Locale.getDefault());
+  public void setLocale(Locale locale) {
+    super.setLocale(locale);
+    dateFormat = new SimpleDateFormat(I18nSupport.getValue(MISC, "format.due.date"), locale);
   }
 
   public Component getTableCellRendererComponent(JTable table, Object value,
